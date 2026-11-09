@@ -18,17 +18,17 @@ import type manifest from './workspace-view.manifest'
  * The sidebar's workspace section, re-cut as a two-state view of the host's own
  * browser.
  *
- * The host's view store is the state: 进行中 is its 隐藏已归档 filter and
- * 已归档 its 仅显示已归档 filter over the one flat list, so both segments answer
- * the host's own view menu, the archive notice's 「筛选已归档会话」 and a reload
- * spent inside either segment (view-store.ts). The store is reached through the
- * registration the host keeps under `sidebar.workspaces` (package
- * `@dsh-claude-style/engine/host.ts` `hostWorkspaceView`), the same instance
- * its own view menu writes; the grouping the reader had before 已归档 is put
- * back on the way out, and kept in this browser for a reload spent inside
- * 已归档.
+ * The host's view store is the state: Active is its Hide archived filter and
+ * Archived its Show archived only filter over the one flat list, so both segments
+ * answer the host's own view menu, the archive notice's "Filter archived
+ * conversations" and a reload spent inside either segment (view-store.ts). The
+ * store is reached through the registration the host keeps under
+ * `sidebar.workspaces` (package `@dsh-claude-style/engine/host.ts`
+ * `hostWorkspaceView`), the same instance its own view menu writes; the grouping
+ * the reader had before Archived is put back on the way out, and kept in this
+ * browser for a reload spent inside Archived.
  *
- * What 已归档 shows, though, is the skin's own list (archived-list.ts): the
+ * What Archived shows, though, is the skin's own list (archived-list.ts): the
  * host's tree would mount every archived conversation at once, which is what
  * slows the section down once the archive holds hundreds (#210). The skin's
  * list takes the archive set and the session baseline off the host's own
@@ -53,7 +53,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   })
   /** The session list, pulled after a delete so the removed summary leaves. */
   let sessions: HostSessionsService | null = null
-  /** The workspace list: the archive set the 已归档 page reads. */
+  /** The workspace list: the archive set the Archived page reads. */
   let workspaces: HostWorkspacesService | null = null
   /** The shell's workspace actions (uiWorkspace); null on a host without the seat. */
   let uiWorkspace: unknown = null
@@ -83,7 +83,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
         if (seat === null || typeof seat.openSession !== 'function') throw new Error('workspace: host uiWorkspace.openSession is unavailable')
         seat.openSession(id)
       },
-      /** Take the conversation back to 进行中 through the host's workspace service; the archive set's own subscription drops the row. */
+      /** Take the conversation back to Active through the host's workspace service; the archive set's own subscription drops the row. */
       unarchive(id) {
         const service = workspaces
         if (service === null || typeof service.unarchiveSession !== 'function') throw new Error('workspace: host unarchiveSession is unavailable')
@@ -210,7 +210,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     const view = follower.view()
     segments.sync(header, view)
     viewStamp.mark(root, view)
-    // The archived segment's list stands in the section's own room; 进行中
+    // The archived segment's list stands in the section's own room; Active
     // hands the room back to the host's tree. sync re-reads the host's
     // snapshots each pass (the list itself writes nothing when they are
     // unchanged).

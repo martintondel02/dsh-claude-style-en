@@ -1,33 +1,33 @@
-# D75. 私有通道与安全边界
+# D75. Private channels and the security boundary
 
-- **取代**：D11
+- **Replaces**: D11
 
-## 背景
+## Background
 
-皮肤需要自己的私有通道：读取与写入设置、转发账号信息、删除会话。这些通道借住在宿主的进程与页面里，而宿主可能绑在局域网上，页面又能驱动执行命令的智能体；插件自己的通道不在宿主的请求栅栏之内，设置文档也只有运行宿主的电脑上那一份是权威的。
+The skin needs private channels of its own: reading and writing settings, forwarding account information, deleting sessions. These channels live inside the host's process and page, and the host may be bound to a LAN, while the page can drive an agent that executes commands; a plugin's own channels are not inside the host's request fence, and of the settings documents only the one on the machine running the host is authoritative.
 
-宿主按地址决定把页面和接口给谁：回环地址、它自己绑定的地址，以及部署时声明过的地址打开的是完整页面，其余地址上的请求被拒。设置文档随页面一起给出，经局域网地址或隧道打开的页面与回环页面读写的是同一份。
+The host decides by address who gets the page and the API: requests from the loopback address, the address it is bound to, and addresses declared at deployment get the full page, and requests on other addresses are refused. The settings document is served with the page, so a page opened through a LAN address or a tunnel reads and writes the same copy as a loopback page.
 
-## 决定
+## Decision
 
-- 跨越皮肤与宿主、或跨越本机与远端的每一段内容，都走宿主已有的通道与栅栏，皮肤不另开一条平行的读写路径。
-- 私有通道在处理之前先问宿主这条请求是否该被拒绝，拒绝即不处理；宿主没有这项服务时，自带的替代只放行来自本机回环的请求。
-- 判定「来自本机」以请求方写不了的那一项为准，即对端地址；回环主机名、无跨站标记、来源与主机一致这几项都要同时成立，其中任何一项都可能被伪造，都不单独作数。
-- 设置读写只有官方配置表单一条传输：绑定宿主实际提供的命名空间，读取与写入都经表单控制器，皮肤不重复实现写队列与修订号栅栏。
-- 页面自己刚写下的字段在宿主答复之前不被文档覆盖：写入还在路上时重读到的文档仍带着改动之前的值，采用它会让刚按下的控件先跳回原值；这些字段由绑定按住，答复到达后再以宿主的答复为准。
-- 宿主给出哪些命名空间，皮肤就用哪些。这份答复由宿主按地址给出，皮肤不先判一次这个页面能不能写。
-- 宿主半边转发账号契约，浏览器半边只认一条回退顺序：昵称与头像各自收在一处身份存储，欢迎语与账号行只读这一处。
-- 外来字符串一律当数据：设置、账号服务、系统与其他插件给来的文本只用文本节点或元素属性写入，图标复制节点，不重新解析标记。
+- Every piece of content crossing between the skin and the host, or between this machine and a remote one, travels on the host's existing channels and fence; the skin opens no parallel read-write path of its own.
+- A private channel first asks the host whether the request should be refused, and a refused request is not handled; when the host has no such service, the built-in substitute lets through only requests from the local loopback.
+- The "from this machine" decision rests on the one item the requester cannot write, the peer address; a loopback host name, no cross-site marker, and an origin matching the host must all hold at once, and none of them counts on its own since any of them can be forged.
+- Settings are read and written through one transport only, the official config form: bind the namespace the host actually offers, and read and write through the form's controller; the skin does not reimplement the write queue and revision fence.
+- A field the page has just written is not overwritten by the document until the host answers: a document re-read while the write is still in flight still carries the value from before the change, and adopting it would make the control just pressed jump back to the old value; the binding holds such fields and takes the host's answer once it arrives.
+- Whatever namespaces the host offers, the skin uses. The answer is given by the host per address, and the skin does not first judge whether this page can write.
+- The host half forwards the account contract, and the browser half recognizes only one fallback order: the nickname and the avatar each live in one identity store, and the greeting and the account row read only that store.
+- Every foreign string is treated as data: text from settings, the account service, the system and other plugins is written only as text nodes or element attributes, icon copies are cloned nodes, and markup is never re-parsed.
 
-## 后果
+## Consequences
 
-- 私有通道依赖宿主的请求栅栏与配置表单服务；宿主缺席时自带替代只服务本机，远端访问被拒。
-- 哪些地址上的页面能写设置由宿主的部署声明决定：可信地址上的页面与回环页面读写同一份设置，未声明的地址上页面连不上宿主。
-- 放弃的方案：自己实现一套设置同步与请求鉴权；让皮肤再判一次页面的读写权限；把账号回退顺序散在各处显示。
-- 换来的是新增通道或新增显示时不必再判一次安全边界，安全判定只有一处。
+- A private channel depends on the host's request fence and config-form service; when the host is absent the built-in substitute serves only this machine, and remote access is refused.
+- Which pages on which addresses can write settings is decided by the host's deployment declaration: a page on a trusted address reads and writes the same settings as a loopback page, and on an undeclared address a page cannot reach the host.
+- Abandoned: implementing a settings sync and request authentication of one's own; having the skin judge the page's read-write permission a second time; scattering the account fallback order across the places that display it.
+- What it buys: a new channel or a new display does not have to judge the security boundary again, and there is one place for the security decision.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供自带鉴权的路由注册，或提供不依赖配置表单的设置注册方式时，改接宿主并删去自带替代。
-- 宿主对同一类地址给出不同的读写权限，或为单个页面提供权限声明时，皮肤按那份声明显示，不再假定每一个读得到的页面都写得了。
-- 宿主提供统一的显示名与头像服务，或账号契约升级通道时，改接宿主。
+- When the host provides route registration with authentication of its own, or a way to register settings that does not depend on the config form, attach to the host and delete the built-in substitute.
+- When the host gives different read and write permissions for the same kind of address, or offers a permission declaration per page, the skin displays by that declaration and no longer assumes every page it can read it can write.
+- When the host provides a unified display-name and avatar service, or the account contract gains an upgrade channel, attach to the host.

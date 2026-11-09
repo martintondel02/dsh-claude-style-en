@@ -1,31 +1,31 @@
-# D3. 宿主契约集中在契约模块
+# D3. The host contract lives in one contracts module
 
-- **取代**：D19、D44
+- **Replaces**: D19, D44
 
-## 背景
+## Background
 
-皮肤靠宿主页面的结构定位元素，也依赖宿主服务给出的形状与工作顺序。这些假设散落在各处时，宿主改版的影响面要一处一处去找；手搭的替代页面只能复现作者已经知道的结构，复现不了真实宿主的时序。
+The skin locates elements through the structure of the host page, and depends on the shapes and ordering the host services provide. When these assumptions are scattered, the impact of a host revision has to be traced one place at a time; a hand-built stand-in page can only reproduce the structure its author already knows, never the real host's timing.
 
-## 决定
+## Decision
 
-- 皮肤依赖的宿主选择器、属性、服务形状与时序假设集中在一处（契约模块），每一条注明它在哪个宿主构建上核对过、由哪些功能依赖。
-- 新增一条宿主选择器要同时在契约模块、契约表与功能清单里登记；构建拒绝没有登记的选择器字面量，也拒绝没有功能认领的条目。
-- 定位宿主元素按这个优先顺序：宿主承诺的稳定契约（插槽定位点、宿主自己的属性）→ 皮肤按结构写下的标记 → 宿主文档里查到的类名。界面文字不参与定位。
-- 皮肤按结构写下的标记是整词匹配的部件名；样式表读取部件名与宿主的稳定属性，类名子串匹配不再出现。
-- 同一个名称在不同区域含义不同时，按区域分别登记，互不牵连。
-- 宿主把自己的另一个组件挂进某个区域的盒子里时（输入卡片里的浮层座位），区域的名字不在那棵子树里读：那个座位自己的类名照读，里面站着的东西不算这个区域的行与控件。
-- 契约测试在锁定版本的真实宿主组件上运行，逐条核对契约里的假设；宿主升级时先跑契约测试，失效的假设逐条列出，再改对应功能。
-- 时序假设与选择器同等对待，写成契约并核对。
-- 页面跑的是哪一版，以产物内容算出的构建编号为准；页面的加载时间说明不了代码版本。
+- The host selectors, attributes, service shapes and timing assumptions the skin depends on are collected in one place (the contracts module), each noting the host build it was checked against and the features that depend on it.
+- A new host selector is registered in the contracts module, the contract table and the feature manifests at the same time; the build rejects a selector literal that is not registered, and an entry no feature claims.
+- Host elements are located in this order of precedence: a stable contract the host promises (slot anchors, the host's own attributes) → a marker the skin writes from structure → a class name found in the host's documentation. Interface text never takes part in locating.
+- A marker the skin writes from structure is a part name matched as a whole word; stylesheets read part names and the host's stable attributes, and class-name substring matching no longer appears.
+- When the same name means different things in different regions, each region registers it separately and neither pulls in the other.
+- When the host mounts another of its components inside a region's box (the composer card's overlay seat), the region's name is not read inside that subtree: the seat's own class names are read as usual, and what stands inside it counts as neither the region's rows nor its controls.
+- The contract test runs against the locked version of the real host components and checks every assumption in the contract; on a host upgrade it runs first, lists each assumption that no longer holds, and then the affected features are changed.
+- Timing assumptions are treated the same as selectors: written into the contract and checked.
+- Which build the page runs is the build id computed from the artifact's contents; a page's load time says nothing about the code's version.
 
-## 后果
+## Consequences
 
-- 加一条宿主选择器要在契约模块、契约表与功能清单里同时登记，构建检查三者一致，而它们都是手工维护的。
-- 契约测试要装上并挂载真实宿主包，环境比替代页面重；锁定的宿主版本要随支持范围更新。
-- 宿主改版时失效的假设会逐条列出，改动面因此变大：每条被取代的假设都要从契约里删除，并改对应功能。
-- 放弃的方案：让每处功能各自写下自己依赖的选择器与形状，改动只落在一处。代价是宿主结构变化的影响面需要重新收集，同一条假设也会被重复写下。
+- Adding a host selector means registering it in the contracts module, the contract table and the feature manifests at once, and the build checks that the three agree, while all three are maintained by hand.
+- The contract test has to install and mount the real host packages, a heavier environment than a stand-in page; the locked host version has to be updated along with the supported range.
+- On a host revision the assumptions that no longer hold are listed one by one, so the surface of change grows: every replaced assumption has to be deleted from the contract and the affected feature changed.
+- Abandoned: letting each feature write down the selectors and shapes it depends on, so a change lands in one place. The cost is that the impact of a structural host change has to be collected again, and the same assumption gets written down more than once.
 
-## 重审条件
+## Reconsider when
 
-- 宿主为插件提供官方的契约或测试工具包时，改用宿主的。
-- 宿主为这些区域提供稳定的属性契约时，优先读取宿主的属性，皮肤按结构写下的标记随之删除。
+- The host provides an official contract or testing kit for plugins: use the host's.
+- The host provides a stable attribute contract for these regions: read the host's attributes first, and the markers the skin writes from structure are deleted accordingly.

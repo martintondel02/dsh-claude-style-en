@@ -17,9 +17,9 @@ interface StatsRow {
 }
 
 /**
- * The time and throughput rows, in both widths: the host's own 模型用时
- * and 工具调用用时 while the row is detailed, their sum under the skin's
- * 总用时 while it is compact (the host has no single figure for the time
+ * The time and throughput rows, in both widths: the host's own LLM time
+ * and Tool call time while the row is detailed, their sum under the skin's
+ * Total time while it is compact (the host has no single figure for the time
  * a session has taken). The first-token average and the output speed are
  * the same two rows either way.
  */

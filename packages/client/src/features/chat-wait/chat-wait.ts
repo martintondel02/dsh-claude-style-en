@@ -34,15 +34,14 @@ interface WaitLine {
 /**
  * The live turn's running row: what the turn is doing now in this line's own
  * words (shared/turn-activity.ts), the word its brand waits on where no state
- * can be read — the skin's own 「正在思考」 under the Claude brand, the host's own
- * 「深度求索中」 under the DeepSeek brand — the turn's elapsed time as a quiet
- * clock beside it, and 「暂未响应」 once the model has been silent for ten seconds
- * (wait-state.ts). Under the
- * Precise choice three of those states name more than a state: a call in
- * flight says the file it works on (「正在读取 app.js」) or the description it
- * declares for itself (a command call must carry one), and reasoning says the
- * clause the model itself is on (「Checking the file is true」); the Simple
- * choice reads the bare states alone. A wording written stands a whole second
+ * can be read — the skin's own "Thinking…" under the Claude brand, the host's own
+ * "Deep diving" under the DeepSeek brand — the turn's elapsed time as a quiet
+ * clock beside it, and "No response yet" once the model has been silent for ten
+ * seconds (wait-state.ts). Under the Precise choice three of those states name
+ * more than a state: a call in flight says the file it works on ("Reading app.js")
+ * or the description it declares for itself (a command call must carry one), and
+ * reasoning says the clause the model itself is on ("Checking the file is true");
+ * the Simple choice reads the bare states alone. A wording written stands a whole second
  * (wordForPass), so a turn that moves through several states that fast reads as
  * one line rather than as flicker. The wording swaps in place after
  * transitions.dev's "Thinking states" (MIT): a sweeping highlight while a word

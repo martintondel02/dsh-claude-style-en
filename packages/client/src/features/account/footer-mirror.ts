@@ -327,7 +327,7 @@ export function createFooterMirror(options: {
     const entryText = textExcludingOverlays(entry)
     const triggerText = (trigger.textContent || '').trim()
     // Tight slack: the trigger must account for essentially all of the
-    // entry's visible text. A balance box reading "余额¥10.07" beside an
+    // entry's visible text. A balance box reading "Balance ¥10.07" beside an
     // icon-only trigger already exceeds it — and its bar must survive.
     return entryText.length - triggerText.length <= 2
   }

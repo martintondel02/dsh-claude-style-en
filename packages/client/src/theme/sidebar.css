@@ -157,7 +157,7 @@ body[data-dsh-claude-style] button[data-dsh-claude-part~="new-session"]::before 
   mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round'><line x1='12' y1='4' x2='12' y2='20'></line><line x1='4' y1='12' x2='20' y2='12'></line></svg>") center / 16px 16px no-repeat;
 }
 
-/* ---------- the sidebar's panel rows (插件 + plugin entries) ---------- */
+/* ---------- the sidebar's panel rows (the plugin panel + plugin entries) ---------- */
 /* The panel entries live in a `nav.panelList` whose own gap stacks on the row
    margin, so the rows' 6px margin is the only spacing, and each row takes the
    new-session metrics — including the 20px icon box, so both labels start at the

@@ -12,64 +12,69 @@ import type { CopyKey } from './copy'
 import type manifest from './date-groups.manifest'
 
 /**
- * 侧栏的会话列表按日期排列：今天、昨天、星期几，一周以前收进「更早」，
- * 每一段里最近的排在最上面，行右手标出它属于哪个工作区。
+ * The sidebar's session list ordered by date: today, yesterday, a weekday; anything older than a week
+ * goes into "Earlier", the newest stands at the top of each section, and the row's right hand names
+ * the workspace it belongs to.
  *
- * 宿主自己没有「按日期」这一档 — 它的视图 store 只认按工作区、工作区树和扁平
- * 三种分组 — 而工作区分组里每一段各是一张列表，日期没法跨过去。所以这里做两件事：
- * 一是把宿主的视图 store 切到扁平，让所有会话落在同一张列表上；二是在这张列表里
- * 按更新时间重排座位、并在每段开头插一条自己的标题。
+ * The host has no "by date" choice of its own — its view store knows only by workspace, workspace tree
+ * and flat — and in the workspace grouping each section is its own list, so dates cannot cross sections.
+ * So this feature does two things: it switches the host's view store to flat, so every session lands on
+ * one list; and it re-orders the seats in that list by update time and inserts a header of its own at the
+ * start of each section.
  *
- * 行本身不动，动的是宿主给每行包的那个盒子（与「正在运行的会话排在开头」同一个
- * 手法）：盒子里只有一个行，挪盒子不影响 React 的账。所有写入都先比对现状，
- * 站对了就一个字不写 — 我们自己的写入也会让观测回调再跑一遍，不比对会自激。
+ * The rows themselves do not move, only the box the host wraps around each row (the same device as
+ * "running sessions stand first"): a box holds one row, so moving the box leaves React's bookkeeping alone.
+ * Every write is compared with what stands first, and when it already stands nothing is written — our own
+ * writes make the observer run again, and without the comparison it would feed itself.
  */
 
-/** 行右手那排行内按钮：工作区标签插在它前面。 */
+/** The row's right-hand cluster of inline buttons: the workspace chip is inserted ahead of it. */
 const ROW_ACTIONS_SELECTOR = '[data-dsh-claude-part~="row-actions"]'
-/** 我们自己插的日期标题。 */
+/** The date header this feature inserts. */
 const HEADER_ATTRIBUTE = 'data-dsh-claude-date-header'
-/** 我们自己插在行里的工作区标签。 */
+/** The workspace chip this feature inserts in the row. */
 const CHIP_CLASS = 'dsh-claude-date-chip'
-/** 我们自己的写入打上静音标记：宽观测听见它们时不再算一次页面变化，免得自激。 */
+/** Our own writes carry the quiet mark: the wide observer hearing them does not count another page change, which would feed itself. */
 function quiet(node: HTMLElement) {
   node.setAttribute(QUIET_ATTR, '')
 }
-/** 模式标记落在 body 上，样式表靠它决定哪几条规则算数。 */
+/** The mode mark lands on the body; the stylesheet reads it to decide which rules apply. */
 const MODE_ATTRIBUTE = 'data-dsh-claude-date-groups'
-/** 读者正在翻已归档：那一档不按日期分，样式表靠这个标记把日期视图的样式让开。 */
+/** The reader is browsing archived sessions: that view is not grouped by date, and the stylesheet reads this mark to stand the date view's rules down. */
 const ARCHIVED_ATTRIBUTE = 'data-dsh-claude-date-archived'
 /**
- * 切到扁平之前的分组记在这里。宿主的视图 store 会把这档写进它自己的存储，
- * 所以只在内存里记不够：读者在日期视图里退出应用，下次开机列表就是扁平的。
+ * The grouping in force before the switch to flat is remembered here. The host's view store writes
+ * that choice into its own storage, so memory alone is not enough: a reader who quits inside the date
+ * view would come back to a flat list.
  */
 const GROUP_BACKUP_KEY = 'dsh-claude-group-before-date-view'
-/** 一周以内的日子用星期几当标题，再早的收进一段。 */
+/** Days within a week are titled by weekday; anything earlier falls into one section. */
 const WEEKDAY_LIMIT = 7
 /**
- * 切换视图的事件名：铃铛按下时派发，本特性接住它，在「宿主的按工作区」与
- * 「我们的按日期」之间来回切。日期视图默认关着，而且这次选择不跨刷新保留。
+ * The name of the view-switch event: the bell dispatches it and this feature takes it, switching between
+ * the host's by-workspace order and our by-date order. The date view is off by default, and that choice
+ * does not survive a refresh.
  */
 export const DATE_VIEW_TOGGLE_EVENT = 'dsh-claude-toggle-date-view'
 
-/** 一天所属段落的标题键（顺序与 Date#getDay 一致）。 */
+/** The header key of the section a day belongs to (in the order of Date#getDay). */
 const WEEKDAY_KEYS: CopyKey[] = ['weekday0', 'weekday1', 'weekday2', 'weekday3', 'weekday4', 'weekday5', 'weekday6']
 
-/** 一条列表里的一个座位：宿主给每行包的那个盒子，加上我们读到的会话。 */
+/** One seat in a list: the box the host wraps around a row, plus the session read from it. */
 interface Seat {
-  /** 宿主的盒子：列表里挪动的是它，不是行。 */
+  /** The host's box: this is what moves in the list, not the row. */
   box: HTMLElement
-  /** 盒子里那一行，读 key、插标签都落在它上面。 */
+  /** The row inside the box, where the key is read and the chip is inserted. */
   row: HTMLElement
-  /** 会话 id（行 key 去掉 `session:` 前缀）。 */
+  /** The session id (the row key with its `session:` prefix removed). */
   id: string
-  /** 最后更新时间，段落与先后都按它排。 */
+  /** The last update time, which orders both the sections and the rows within them. */
   updatedAt: number
-  /** 离今天几天：0 是今天，1 是昨天，越大越早。 */
+  /** Days away from today: 0 today, 1 yesterday, larger means earlier. */
   day: number
 }
 
-/** 当地那一天的零点。 */
+/** Local midnight of that day. */
 function startOfDay(time: number) {
   const date = new Date(time)
   date.setHours(0, 0, 0, 0)
@@ -77,10 +82,11 @@ function startOfDay(time: number) {
 }
 
 /**
- * 两个零点之间隔了几天。
+ * How many days lie between two midnights.
  *
- * 按年月日折算成天序号再相减，而不是拿毫秒差除以一天：夏令时那天只有 23 小时，
- * 毫秒差会把同一天的凌晨和深夜算成隔了一天（或反过来）。
+ * Counted by converting year, month and day into a day index and subtracting, rather than dividing a
+ * millisecond gap by a day: a daylight-saving day has only 23 hours, and a millisecond gap would count
+ * early and late in the same day as a day apart (or the reverse).
  */
 function daysBetween(earlier: number, later: number) {
   const index = (stamp: number) => {
@@ -90,16 +96,16 @@ function daysBetween(earlier: number, later: number) {
   return index(later) - index(earlier)
 }
 
-/** 记下读者原来的分组（localStorage 不可用时就算了，退化成只记在内存里）。 */
+/** Remember the reader's previous grouping (skipped when localStorage is unavailable, leaving the in-memory copy alone). */
 function rememberGroup(group: HostSessionGroupBy) {
   try {
     globalThis.localStorage?.setItem(GROUP_BACKUP_KEY, group)
   } catch {
-    // 隐私模式或存储被禁：内存里的 previousGroup 仍然管这一趟。
+    // Private mode or storage disabled: the in-memory previousGroup still carries this session.
   }
 }
 
-/** 读回上次记下的分组；没有或不是合法值时返回 null。 */
+/** Read back the grouping remembered last time; null when absent or not a valid value. */
 function rememberedGroup(): HostSessionGroupBy | null {
   try {
     const value = globalThis.localStorage?.getItem(GROUP_BACKUP_KEY)
@@ -109,16 +115,16 @@ function rememberedGroup(): HostSessionGroupBy | null {
   }
 }
 
-/** 还完就删：这份备份只该存在读者待在日期视图里的那段时间。 */
+/** Removed once restored: this backup should exist only while the reader stays in the date view. */
 function forgetGroup() {
   try {
     globalThis.localStorage?.removeItem(GROUP_BACKUP_KEY)
   } catch {
-    // 同上，删不掉也不影响本次会话。
+    // As above, failing to remove it does not affect this session.
   }
 }
 
-/** 一个座位所属段落的标题：今天、昨天、星期几；一周以前一律「更早」。 */
+/** The title of the section a seat belongs to: today, yesterday, a weekday; anything older than a week is "Earlier". */
 function labelOf(seat: Seat) {
   if (seat.day <= 0) return copy('today')
   if (seat.day === 1) return copy('yesterday')
@@ -131,36 +137,38 @@ function labelOf(seat: Seat) {
 
 export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   /**
-   * 宿主的服务按每一遍现取，不在安装时取一次：本特性随插件一起装上，而宿主是在那之后
-   * 才注册 `sessions`、`workspaces` 和视图 store 的。安装时抓下来的值会整个世代都是
-   * null —— 日期视图于是把每一段都画成「更早」、行上也没有工作区标签（#222）。
+   * The host's services are fetched on every pass rather than once at install: this feature is installed
+   * with the plugin, and the host registers `sessions`, `workspaces` and the view store only after that.
+   * A value captured at install would be null for the whole generation — the date view would draw every
+   * section as "Earlier" and the rows would carry no workspace chip (#222).
    */
   const sessionsNow = () => hostSessions(ctx)
   const workspacesNow = () => hostWorkspaces(ctx)
   const viewNow = () => hostWorkspaceView(ctx)
 
-  /** 我们自己插进页面的节点，卸载时按这份清单收走（不去 document 里回查）。 */
+  /** The nodes this feature inserted into the page, collected on teardown from this list (no second query of the document). */
   const mine = new Set<HTMLElement>()
-  /** 我们把宿主的视图 store 切成扁平之前的分组，卸载时还回去。 */
+  /** The grouping in force before this feature switched the host's view store to flat, restored on teardown. */
   let previousGroup: HostSessionGroupBy | null = null
-  /** 扁平这一档是我们写进去的：store 里再读到别的值，就是读者的选择。 */
+  /** Flat is the value this feature wrote: any other value read back from the store is the reader's choice. */
   let flattening = false
-  /** 日期视图开着吗：默认开着，读者按下铃铛才换回宿主的分组。 */
+  /** Whether the date view is on: off by default, and the reader turns it on with the bell. */
   let dateMode = false
   let disposed = false
 
   /**
-   * 会话 id → 它所在的工作区，以及这份归属是否已经答全。
+   * Session id → the workspace it belongs to, and whether that ownership is complete.
    *
-   * `ready` 只在宿主的工作区列表答出来之后才是真：在那之前谁属于哪个工作区还没有
-   * 答案，页面不能据此判定「这条会话不属于任何工作区」而把它藏起来。
+   * `ready` is true only after the host's workspace list has answered: before that there is no answer
+   * about who belongs where, and the page must not read it as "this session belongs to no workspace"
+   * and hide it.
    */
   function workspacesById() {
     const titles = new Map<string, string>()
     const list = workspacesNow()?.list
     const snapshot = typeof list?.getSnapshot === 'function' ? list.getSnapshot() : undefined
     if (snapshot === undefined || snapshot === null || snapshot.phase === 'pending') return { titles, ready: false }
-    // 页面没有工作区列表时 `items` 可能整个不在：那一档同样算还没有答案。
+    // When the page has no workspace list, `items` may be missing entirely: that also counts as no answer yet.
     if (!Array.isArray(snapshot.items)) return { titles, ready: false }
     for (const row of snapshot.items) {
       for (const id of row.sessionIds) if (!titles.has(id)) titles.set(id, row.title)
@@ -168,7 +176,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     return { titles, ready: true }
   }
 
-  /** 会话 id → 最后更新时间。 */
+  /** Session id → its last update time. */
   function timesById() {
     const times = new Map<string, number>()
     const list = sessionsNow()?.list
@@ -182,16 +190,17 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 把宿主的列表切成扁平一条。
+   * Cut the host's list down to one flat list.
    *
-   * 工作区分组里每一段各是一张列表，日期要跨工作区，只能落在一张列表上；铃铛
-   * 换回宿主视图时把这档还回去。分组记在 previousGroup 里，应用被意外关掉时由
-   * localStorage 里那份接着记。
+   * In the workspace grouping each section is its own list, and dates must cross workspaces, so they can
+   * only land on one list; when the bell returns to the host view this choice goes back. The grouping is
+   * kept in previousGroup, and the copy in localStorage carries it when the application is closed unexpectedly.
    *
-   * 扁平是我们的写入。压平之后再读到的分组只要是别人的，就说明读者在宿主的视图
-   * 菜单里改了分组：日期视图让开，把他选的这一档留在 store 里（#267）。
-   * @returns 日期视图让开了没有：让开的那一遍不能接着排版，否则 disable() 收走的
-   * 段落标题与行内标签会被这一遍重新插回一个已经没有模式标记的页面。
+   * Flat is this feature's write. A grouping read back after flattening that is not ours means the reader
+   * changed it in the host's view menu: the date view stands down and leaves that choice in the store (#267).
+   * @returns Whether the date view stood down: a pass that stood down must not go on arranging, or the
+   * section headers and row chips disable() collected would be reinserted by this pass into a page that no
+   * longer carries the mode mark.
    */
   function flatten(): boolean {
     const store = viewNow()
@@ -203,7 +212,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
       return false
     }
     if (flattening) {
-      // disable 拿到这一档：让开的时候不能拿 previousGroup 那份盖掉读者刚选的。
+      // disable receives this choice: standing down must not overlay the reader's fresh choice with previousGroup.
       disable(group)
       return true
     }
@@ -214,7 +223,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     return false
   }
 
-  /** 工作区标签：插在行内按钮前面，太长由样式表省略。 */
+  /** The workspace chip: inserted ahead of the row's inline buttons, truncated by the stylesheet when too long. */
   function dress(seat: Seat, title: string) {
     const row = seat.row
     let chip = row.querySelector<HTMLElement>(`:scope > .${CHIP_CLASS}`)
@@ -237,17 +246,18 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 排一条列表：座位按日期倒序站好，每段开头一条自己的标题。
-   * @param list - 座位们共同的父节点。
-   * @param seats - 这条列表的座位，按宿主当前画出来的顺序。
+   * Arrange one list: the seats stand in date order, each section headed by its own header.
+   * @param list - the common parent of the seats.
+   * @param seats - this list's seats, in the order the host currently draws them.
    */
   function place(list: Element, seats: Seat[]) {
-    // 站好的顺序：离今天越近越前，同一天里更新时间新的在前（sort 是稳定的，
-    // 时间一样的两个座位保持宿主给的先后）。
+    // The order they stand in: closer to today first, and within one day the newer update first (sort is
+    // stable, so two seats with the same time keep the host's order).
     const ordered = seats.slice().sort((left, right) => left.day - right.day || right.updatedAt - left.updatedAt)
-    // 现在的顺序按 DOM 读，而不是按总线的匹配清单读：清单是增量维护的，节点被挪过
-    // 之后它的先后就不再是页面上的先后，拿它比对会每一遍都判「没站好」，把整条
-    // 列表反复重排 —— 读者看到的就是列表在抖。
+    // The current order is read from the DOM, not from the bus's match list: the list is maintained
+    // incrementally, and once nodes have moved its order is no longer the page's order; comparing against
+    // it would judge "not standing" on every pass and re-sort the whole list again and again — which the
+    // reader sees as the list twitching.
     const byBox = new Map<Element, Seat>()
     for (const seat of seats) byBox.set(seat.box, seat)
     const current: Seat[] = []
@@ -257,11 +267,12 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     }
     const standing = current.length === ordered.length && current.every((seat, at) => seat === ordered[at])
     if (!standing) {
-      // 挨个追加到末尾：一轮之后列表里的座位就是 ordered 的顺序；标题节点先不管，
-      // 下面统一重建（这一步只在这一条列表上写过非座位子节点时才需要）。
+      // Append one by one to the end: after one round the list's seats stand in `ordered` order; the header
+      // nodes are left for now and rebuilt together below (this step is needed only when the list holds
+      // non-seat child nodes).
       for (const seat of ordered) list.appendChild(seat.box)
     }
-    // 段落边界：相邻两个座位的标题不一样的第一行。
+    // Section boundaries: the first row where the title differs from the adjacent seat's.
     const boundaries: { before: Element, label: string }[] = []
     let lastLabel: string | null = null
     for (const seat of ordered) {
@@ -271,7 +282,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
         lastLabel = label
       }
     }
-    // 这条列表里现有的标题，按文档顺序。
+    // The headers standing in this list, in document order.
     const headers: HTMLElement[] = []
     for (const child of Array.from(list.children)) {
       if (child instanceof HTMLElement && child.getAttribute(HEADER_ATTRIBUTE) !== null) headers.push(child)
@@ -295,26 +306,29 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     }
   }
 
-  /** 一遍写入：先把宿主的列表压平，再按日期重排每条列表、给行加标签。 */
+  /** One writing pass: flatten the host's list first, then re-order each list by date and chip the rows. */
   function arrange() {
     if (disposed) return
-    // 还原必须排在压平之前：应用上次在日期视图里被关掉时，宿主记下的是扁平，
-    // 读者自己的分组只剩这份备份。反过来做会把刚压平的列表又展开。
+    // Restoring must come before flattening: when the application was last closed inside the date view,
+    // the host recorded flat and the reader's own grouping survives only in this backup. The other way
+    // round would unfold the list just flattened.
     healLeftover()
     if (!dateMode) return
-    // 已归档的会话不按日期分：那是读者回头翻旧账的地方，日期段落只属于进行中。
+    // Archived sessions are not grouped by date: that is where the reader looks back at old work, and
+    // date sections belong to the live list only.
     if (archivedView()) {
       calm()
       return
     }
     document.body.removeAttribute(ARCHIVED_ATTRIBUTE)
-    // 让开的那一遍到此为止：disable() 已经收走标题与标签，接着排下去会把它们
-    // 插回一个没有模式标记的页面，而这些节点只有日期视图的样式表认。
+    // A pass that stood down ends here: disable() has already collected the headers and chips, and
+    // arranging on would insert them back into a page without the mode mark, where only the date view's
+    // stylesheet knows them.
     if (flatten()) return
     const { titles, ready } = workspacesById()
     const times = timesById()
     const today = startOfDay(Date.now())
-    // 座位按它们所在的列表归堆：一条列表一次排完，段落不会跨列表。
+    // Seats are grouped by the list they stand in: one list is arranged at once, so sections never cross lists.
     const lists = new Map<Element, Seat[]>()
     for (const row of rows.all()) {
       const key = row.getAttribute(SESSION_ROW_KEY_ATTRIBUTE) ?? ''
@@ -323,15 +337,15 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
       const list = box === null ? null : box.parentElement
       if (box === null || list === null) continue
       const id = key.slice('session:'.length)
-      // 归属答全之后仍不属于任何工作区的会话让开：日期段落说的是哪天聊过哪件事，
-      // 一条没有归属的会话落进来只是噪音。归属还没答出来的时候一行都不藏 ——
-      // 拿不到答案不等于没有归属。
+      // Sessions that still belong to no workspace after the ownership answer is complete stand down: date
+      // sections say which day a conversation happened, and a session with no owner is noise there. Before
+      // ownership has answered, no row is hidden — no answer does not mean no owner.
       const workspace = titles.get(id)
       if (ready && workspace === undefined) {
         if (box.style.display !== 'none') box.style.display = 'none'
         continue
       }
-      // 其余跑着的会话照常排进「今天」那一块。
+      // The remaining running sessions are arranged into the "Today" block as usual.
       if (box.style.display === 'none') box.style.display = ''
       const updatedAt = times.get(id) ?? 0
       const seat: Seat = { box, row, id, updatedAt, day: daysBetween(startOfDay(updatedAt), today) }
@@ -343,7 +357,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     for (const [list, seats] of lists) place(list, seats)
   }
 
-  /** 读者现在翻的是已归档吗：宿主的筛选是「只看已归档」或「混着显示」都算。 */
+  /** Whether the reader is browsing archived now: the host's filter counts both "archived only" and "show both". */
   function archivedView() {
     const store = viewNow()
     if (store === null || store === undefined || typeof store.getSnapshot !== 'function') return false
@@ -352,8 +366,9 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 把日期视图写过的东西收走，列表交回宿主原来的排法。
-   * 用在读者切到已归档的时候：那一档不分日期，也不该留着日期视图的痕迹。
+   * Collect what the date view wrote and hand the list back to the host's order.
+   * Used when the reader switches to archived: that view is not grouped by date and should keep no
+   * trace of the date view.
    */
   function calm() {
     document.body.setAttribute(ARCHIVED_ATTRIBUTE, '')
@@ -363,8 +378,9 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 把行上写过的东西还回去：让开的行恢复显示，标签摘掉，行内按钮区那笔
-   * 行内 display 也还掉。两处收尾（切到已归档、关掉日期视图）共用这一份。
+   * Put back what was written on the rows: rows that stood down are shown again, chips removed, and the
+   * inline display on the button cluster restored. Both endings (switching to archived, turning the date
+   * view off) share this.
    */
   function restoreSeats() {
     for (const row of rows.all()) {
@@ -376,8 +392,9 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 打开日期视图：切扁平、重排、加标签，标记落到 body 上供样式表和铃铛读。
-   * 排版的活留给下一帧：按下铃铛的那一刻宿主可能正在重画列表，等这一帧画完再读。
+   * Turn the date view on: switch to flat, re-order, chip the rows; the mark lands on the body for the
+   * stylesheet and the bell to read. The arranging itself is left to the next frame: the host may be
+   * redrawing the list the moment the bell is pressed, so read it after that frame.
    */
   function enable() {
     if (dateMode || disposed) return
@@ -389,19 +406,20 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 关掉日期视图：还回宿主的分组，收走我们写过的每一个像素。
-   * 读出 keep 时它已经在 store 里：还的是读者刚选的那一档，不是压平之前记下的（#267）。
+   * Turn the date view off: restore the host's grouping and collect every pixel this feature wrote.
+   * When `keep` is given it is already in the store: what is restored is the reader's fresh choice, not
+   * what was remembered before flattening (#267).
    */
   function disable(keep?: HostSessionGroupBy) {
     if (!dateMode) return
     document.body.removeAttribute(ARCHIVED_ATTRIBUTE)
     dateMode = false
     document.body.removeAttribute(MODE_ATTRIBUTE)
-    // 我们插的标题与标签全部收走，行上改过的显示状态还回去。
+    // Every header and chip this feature inserted is collected, and the display state changed on rows is restored.
     for (const node of mine) node.remove()
     mine.clear()
     restoreSeats()
-    // 分组还成读者原来的那一档（工作区 / 工作区树 / 扁平都照原样）。
+    // The grouping goes back to the reader's own choice (workspace, workspace tree or flat, each exactly as it was).
     const store = viewNow()
     const restore = keep ?? previousGroup ?? rememberedGroup()
     if (restore !== null && typeof store?.actions?.setGroupBy === 'function') store.actions.setGroupBy(restore)
@@ -410,30 +428,31 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     forgetGroup()
   }
 
-  /** 页面要走了：还在日期视图里就把分组还回去，宿主的存储里不留我们的痕迹。 */
+  /** The page is leaving: restore the grouping while still in the date view, leaving no trace of this feature in the host's storage. */
   function onPageHide() {
     if (dateMode) disable()
   }
 
-  /** 铃铛按下：在两种视图之间切一次。 */
+  /** The bell was pressed: switch between the two views once. */
   function onToggle() {
     if (dateMode) disable()
     else enable()
   }
 
   /**
-   * 请调度器在下一帧跑一遍。排版读宿主的会话与工作区列表，那份服务出问题时应当
-   * 算作本特性的一次失败：调度器把它的 sync 单独包住，重试到上限后把本特性摘掉、
-   * 交回收尾，页面上的标记不会留在一个已经停下来的特性后面。
+   * Ask the scheduler to run a pass on the next frame. Arranging reads the host's session and workspace
+   * lists, and a service failing there should count as one failure of this feature: the scheduler wraps
+   * its sync on its own, retries up to a limit, then takes this feature down and hands it to the teardown,
+   * so the page's marks do not outlive a feature that has stopped.
    */
   function schedule() {
     ui.schedule?.()
   }
 
   /**
-   * 会话与工作区两张列表的出现晚于本特性的安装：第一遍读到它们时接上订阅。
-   * 更新时间变了，段落边界可能跟着变（跨零点的那一帧）；会话换了归属、工作区改名，
-   * 行右手的标签也要跟着换。
+   * The session and workspace lists appear later than this feature's install: subscribe when the first
+   * pass reads them. A change in update time can move a section boundary (the frame that crosses midnight);
+   * a session changing owner or a workspace being renamed must also change the chip at the row's right hand.
    */
   let sessionList: HostSessionsService['list'] | null = null
   let workspaceList: HostWorkspacesService['list'] | null = null
@@ -454,15 +473,16 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     }
   }
 
-  /** 侧栏里的每一行会话，宿主随时可能整批重画。 */
+  /** Every session row in the sidebar, which the host may redraw wholesale at any time. */
   const rows = observeMatches<HTMLElement>(SESSION_ROW_SELECTOR, schedule)
-  /** 行被换掉、列表被重画、段落被宿主挤掉：都只算侧栏里的变化，跟着重排一遍。 */
+  /** Rows replaced, lists redrawn, sections pruned by the host: all count as sidebar changes, and the list is arranged again with them. */
   const stopWatch = watchSidebar(schedule)
 
   /**
-   * 自愈：上次若是在日期视图里关掉应用的，宿主记下的是扁平，这里还成读者原来的分组，
-   * 铃铛换回宿主视图时才有正确的目标可还。视图 store 晚于安装出现，所以在每一遍里等
-   * 它出现后做一次，并且排在压平之前。
+   * Self-healing: if the application was last closed inside the date view, the host recorded flat; here
+   * it is restored to the reader's own grouping, so the bell has the right target to return to. The view
+   * store appears later than install, so this runs once per pass after it shows up, and stands before
+   * flattening.
    */
   let healed = false
   function healLeftover() {
@@ -480,7 +500,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   followLists()
   healLeftover()
 
-  /** 关掉视图再拆：分组还回去，我们插的节点收走。两处调用（调度器摘掉本特性、页面卸载）共用这一份。 */
+  /** Turn the view off, then tear down: restore the grouping and collect the inserted nodes. Both callers (the scheduler taking this feature down and a page unload) share this. */
   function teardown() {
     if (disposed) return
     disable()
@@ -502,10 +522,11 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
 
   ui.dateGroups = { sync: arrange, skipOnContentOnly: true, teardown }
 
-  // 日期视图默认关着：装上只把上一次留下的扁平还回读者原来的分组，按下铃铛才排成日期段落。
+  // The date view is off by default: installing only restores the previous flat choice to the reader's own
+  // grouping, and the bell is what orders date sections.
   schedule()
   document.addEventListener(DATE_VIEW_TOGGLE_EVENT, onToggle)
-  // 页面关掉时还在日期视图里：先把分组还回去，别把扁平留在宿主的存储里。
+  // Closed inside the date view: restore the grouping first, leaving no flat choice in the host's storage.
   globalThis.addEventListener('pagehide', onPageHide)
 
   return teardown

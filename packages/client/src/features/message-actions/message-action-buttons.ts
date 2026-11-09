@@ -2,26 +2,27 @@ import * as React from 'react'
 import * as primitives from '@deepseek-ai/dsh-client-ui-primitives'
 
 /**
- * 读者消息控件行末尾的两个按钮，画成宿主自己的按钮：标签走宿主的 Tooltip
- * （primitives 包，与复制按钮同一份），图标是本地的一笔路径。
+ * The two buttons at the end of the reader message's control row, drawn as the host's own buttons:
+ * the labels go through the host's Tooltip (the primitives package, the same one the copy button
+ * uses), and the icons are local single paths.
  *
- * 用 React 渲染是因为 Tooltip 只有组件一种用法；宿主自己的按钮也长在同一棵
- * 树上，两边悬停时出来的提示因此是同一个样式。
+ * They are rendered with React because the Tooltip has only a component form; the host's own buttons
+ * live in the same tree, so the tips shown on hover share one style.
  */
 
-/** 两个按钮自己的标记，值说明是哪一个。 */
+/** The two buttons' own mark, whose value says which one it is. */
 export const ACTION_BUTTON_ATTRIBUTE = 'data-dsh-claude-message-action'
 export const ACTION_BUTTON_CLASS = 'dsh-claude-message-action'
-/** 承载两个按钮的盒子：contents 盒子，宿主那一行的排布因此不变。 */
+/** The box carrying the two buttons: a contents box, so the host's row layout stays as it was. */
 export const BUTTONS_SEAT_ATTRIBUTE = 'data-dsh-claude-message-actions'
 export const BUTTONS_SEAT_CLASS = 'dsh-claude-message-actions'
-/** 撤回：一段往回折的箭头。 */
+/** Retract: an arrow folding back. */
 const RETRACT_PATH = 'M4.5 6.5H10a4 4 0 0 1 0 8H7M4.5 6.5 7 4M4.5 6.5 7 9'
-/** 编辑：一支笔。 */
+/** Edit: a pen. */
 const EDIT_PATH = 'M10.8 2.7 13.3 5.2 5.8 12.7 2.9 13.4 3.6 10.5ZM9.6 3.9 12.1 6.4'
-/** 重跑：沿原方向再走一次的环形箭头。 */
+/** Rerun: a circular arrow going round once more in the original direction. */
 const RERUN_PATH = 'M13.5 5.5V2.8m0 2.7h-2.7M13.2 5.2a5.5 5.5 0 1 0 1 5.2'
-/** 删除此轮：一个叉。 */
+/** Delete this turn: a cross. */
 const DELETE_PATH = 'M4 4l8 8M12 4l-8 8'
 
 export interface MessageActionLabels {
@@ -72,7 +73,7 @@ function action(kind: 'retract' | 'edit' | 'rerun' | 'delete', label: string, pa
   })
 }
 
-/** 每一行只画它支持的动作；回答行是重跑与删除，用户行是撤回与编辑。 */
+/** Each row draws only the actions it supports: the answer row gets rerun and delete, the user row retract and edit. */
 export function MessageActionButtons({ labels, handlers }: { labels: MessageActionLabels, handlers: MessageActionHandlers }) {
   return React.createElement(React.Fragment, null,
     handlers.rerun === undefined ? null : action('rerun', labels.rerun, RERUN_PATH, handlers.rerun),

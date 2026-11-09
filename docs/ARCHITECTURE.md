@@ -1,68 +1,68 @@
-# 架构
+# Architecture
 
-`dsh-claude-style` 是 DeepSeek Harness 的主题插件，做成一个 npm 包(D7)。宿主加载器只接受单文件产物，也不提供资源地址，所以包里装的是构建结果，源码分成两个半边：浏览器半边改动页面的外观与交互，宿主半边做浏览器够不到的事——读用户的文件、注册私有路由、把补丁打进宿主(D36)。
+`dsh-claude-style` is a theme plugin for DeepSeek Harness, packaged as one npm package (D7). The host loader accepts only a single-file artifact and offers no asset addresses, so the package holds build output, and the source is split into two halves: the browser half changes the page's appearance and interaction, and the host half does what the browser cannot reach — read the user's files, register private routes, patch the host (D36).
 
-本文是代码的地图：仓库由哪些部分组成、各部分之间靠什么相连、哪些约束跨过模块边界。具体到某个模块为什么长成现在的样子，写在该模块的头部注释里；方向性选择写在 `docs/adr/`。
+This document is the map of the code: what parts the repository consists of, what connects them, and which constraints cross module boundaries. Why a particular module has its present shape is written in that module's header comment; directional choices are in `docs/adr/`.
 
-## 仓库的形状
+## The shape of the repository
 
-| 位置 | 装什么 |
+| Location | What it holds |
 |---|---|
-| `packages/client` | 浏览器半边：入口、核心运行时、共享层、主题样式表、各个功能 |
-| `packages/host` | 宿主半边：私有路由、设置、用量、搜索、峰值费率、缓存文件 |
-| `packages/contracts` | 两边共用的类型与常量：宿主选择器、私有路由、宿主服务、偏好、时刻、品牌、用量 |
-| `packages/engine` | 与宿主直接打交道、与外观无关的机制。浏览器侧（`src`）：观察总线与帧管线、宿主元素与宿主服务读取、功能调度器、设置绑定、滚动仲裁、部件标记、样式表挂载、延后块加载、皮肤词汇的交接缝。宿主进程侧（`node`）：请求围栏与 JSON 应答、哈尼斯主目录路径、缓存文件、会话日志读取、静态文件与带哈希资源的应答、包根目录查找 |
-| `packages/assets` | 图片、品牌标记与字体面，以及生成资源清单的构建步骤 |
-| `packages/testing` | 验证工具：分逻辑、机制、行为三层的规范，冒烟、端到端、故障语料、探针、截图，以及核对用的清单与表 |
-| `scripts` | 构建、检查、文档与发布工具 |
-| `locale` | 插件的界面文案，属于插件元数据 |
-| `lib` | 构建产物(D47)，从不手工编辑，从不提交 |
+| `packages/client` | The browser half: entry, core runtime, shared layer, theme stylesheets, the features |
+| `packages/host` | The host half: private routes, settings, usage, search, peak rates, cache files |
+| `packages/contracts` | Types and constants the two halves share: host selectors, private routes, host services, preferences, moments, brands, usage |
+| `packages/engine` | Mechanisms that talk to the host directly and are unrelated to appearance. On the browser side (`src`): the observation bus and frame pipeline, host element and host service reads, the feature scheduler, preference binding, scroll arbitration, part markers, stylesheet mounting, deferred chunk loading, the seam that hands over the skin's vocabulary. On the host process side (`node`): request fencing and JSON replies, Harness home directory paths, cache files, session log reading, replies for static files and hashed assets, package root lookup |
+| `packages/assets` | Images, brand marks and font faces, and the build step that generates the asset manifest |
+| `packages/testing` | Validation tools: specs in the three layers of logic, mechanism and behaviour, the smoke, end-to-end, the fault corpus, probes, screenshots, and the manifests and tables used for checking |
+| `scripts` | Build, check, documentation and release tools |
+| `locale` | The plugin's interface copy, which is plugin metadata |
+| `lib` | The build output (D47), never edited by hand and never committed |
 
-## 引擎
+## The engine
 
-`packages/engine` 装的是与宿主页面直接打交道、又与外观无关的机制(D73)。它随构建打进产物，不单独发布，两半各取所需。
+`packages/engine` holds the mechanisms that talk to the host page directly and are unrelated to appearance (D73). It is bundled into the artifact and is not published on its own, and each half takes what it needs.
 
-- 引擎不认识皮肤：它写的属性名（部件、持有、静默、读者接管）连同两处菜单锚点，由皮肤在装载前通过 `engine/src/skin.ts` 与 `installParts` 的词汇交进去；没交接就问起，直接抛出。样式表的 id、包名与文本，延后块的共享模块表，都是每次调用时交进去的。
-- 引擎的两侧各有入口：`engine/src` 在页面里运行，`engine/node` 在宿主进程里运行（类型检查各用自己的配置）。宿主半边的构建把 `engine/node` 的模块连同契约一起内联进每个用到它的模块，产物里没有指向引擎的裸说明符。包名、缓存目录与日志前缀由宿主半边从契约的 `PACKAGE_NAME` 取来，作为参数交给引擎。
-- 归属皮肤的一侧：功能清单与功能句柄表、偏好的取值与页面镜像、账户身份与模型文案住在浏览器半边，宿主半边保留私有路由、设置、用量、搜索与峰值费率，引擎不引用它们。
-- 依赖方向由 `npm run lint` 检查：引擎不得导入浏览器半边、宿主半边或带皮肤词汇的生成模块。源码树的属性核对同时读引擎与浏览器半边，交接处写下的属性名在那里入账。
+- The engine does not know the skin: the attribute names it writes (part, holding, silent, reader takeover), together with the two menu anchors, are handed in by the skin before mounting through `engine/src/skin.ts` and the vocabulary of `installParts`; asked for one of them that was never handed over, it throws. Stylesheet ids, package names and text, and the shared-module table for deferred chunks, are handed in on every call.
+- The engine has an entry on each side: `engine/src` runs in the page, `engine/node` runs in the host process (each type-checked with its own configuration). The host half's build inlines `engine/node` modules, contracts included, into every module that uses them, so the artifact carries no bare specifier pointing at the engine. Package name, cache directory and log prefix are taken by the host half from the contract's `PACKAGE_NAME` and passed to the engine as arguments.
+- The side that belongs to the skin: the feature manifests and feature handle table, preference values and the page mirror, account identity and model copy live in the browser half, while the host half keeps private routes, settings, usage, search and peak rates, and the engine references none of them.
+- The dependency direction is checked by `npm run lint`: the engine may not import the browser half, the host half, or a generated module carrying the skin's vocabulary. The source tree's attribute check reads both the engine and the browser half, and the attribute names written at the seam are recorded there.
 
-## 浏览器半边
+## The browser half
 
-`entry.ts` 是唯一入口，导出的 `apply(ctx)` 由宿主加载器调用。一次装载按固定次序进行：先停掉别的主题样式表，再挂上自己这一代的样式表，然后按清单把功能装起来。拆解走同一条路：`ctx.effect` 注册在最前面，它调用的 `teardown()` 可重复调用，功能的停止函数按安装的倒序逐个运行，一个功能抛错不挡住其余(D12)。
+`entry.ts` is the only entry, and the exported `apply(ctx)` is called by the host loader. One mount proceeds in a fixed order: stop other theme stylesheets first, then mount this generation's stylesheet, then install the features by manifest. Teardown follows the same path: `ctx.effect` is registered first, the `teardown()` it calls may run repeatedly, the features' stop functions run one by one in reverse install order, and one feature throwing does not block the rest (D12).
 
-- `core/` 是核心运行时，页面级的公共资源各有唯一拥有者(D40)：偏好与开关、功能调度器、宿主访问（宿主服务的读取都收在这里，功能按「拿它做什么」取名调用）、界面文案。与宿主直接打交道的机制在 `packages/engine`(D73)。
-- `features/<名字>/` 是功能，一个功能一个目录：主模块导出 `install(ctx, ui)`，旁边一个 `<主模块>.manifest.ts` 登记这个功能的事实，清单的形状由 `core/feature.ts` 的 `FeatureManifest` 定义(D76)。功能模块把 `ui` 写成 `FeatureUi<typeof manifest>`，看得见的只有自己的句柄和它 `reads` 的那些；新的句柄加进调度器的 `Handles`。
-- `shared/` 是共享层：两个以上功能共用的机制。功能之间不互相借用类名，共同的外观用中性的共享类名。
-- `theme/` 是不归属任何功能的样式表：令牌、窗框、侧栏、字体排印、第三方插件、壁纸之下的遮罩。
+- `core/` is the core runtime, where each page-level shared resource has exactly one owner (D40): preferences and switches, the feature scheduler, host access (every read of a host service is collected here, and features call it by an accessor named for what it does), interface copy. Mechanisms that talk to the host directly are in `packages/engine` (D73).
+- `features/<name>/` are the features, one directory per feature: the main module exports `install(ctx, ui)`, and a `<main module>.manifest.ts` beside it registers the feature's facts, with the manifest's shape defined by `FeatureManifest` in `core/feature.ts` (D76). A feature module writes `ui` as `FeatureUi<typeof manifest>`, so it sees only its own handles and the ones it `reads`; a new handle goes into the scheduler's `Handles`.
+- `shared/` is the shared layer: mechanisms two or more features use. Features do not borrow each other's class names; shared looks use neutral shared class names.
+- `theme/` holds stylesheets that belong to no feature: tokens, window frame, sidebar, typography, third-party plugins, the scrim under a wallpaper.
 
-功能清单里 `load: 'deferred'` 的项，其模块从主体产物里挪进一个块，页面在真正取用它时才去取(D76)；只有最初几帧可以不要的功能才延后。
+An entry in a feature manifest with `load: 'deferred'` has its module moved out of the main artifact into a chunk, fetched when the page really uses it (D76); only features the first frames can do without are deferred.
 
-React 与宿主包按名字导入，始终外部化，由宿主提供。只有构建时才有的数据（样式表文本、资源地址、品牌标记、构建编号）从 `virtual:dsh-claude-style/generated` 导入，类型另有声明。宿主服务与快照里的值，在契约模块给出类型之前一律按未知值书写。
+React and the host packages are imported by name, always externalized, and provided by the host. Build-time-only data (stylesheet text, asset addresses, brand marks, the build id) is imported from `virtual:dsh-claude-style/generated`, with its types declared separately. Values from host services and snapshots are written as unknown values until the contracts module gives them a type.
 
-## 宿主半边
+## The host half
 
-宿主半边在 node 里运行，与浏览器半边同属一个包。它注册私有路由(D75)、读会话日志与用户设置、汇总用量、提供搜索与峰值费率、写缓存文件，并把一段补丁打进宿主。路由读的是用户自己的数据，所以每一条前面都站着同一道栅栏，借用宿主自己给 `/api` 的那套校验。
+The host half runs in node and belongs to the same package as the browser half. It registers private routes (D75), reads session logs and user settings, aggregates usage, provides search and peak rates, writes cache files, and patches a piece of the host. Its routes read the user's own data, so the same fence stands in front of every one of them, borrowing the validation the host itself applies to `/api`.
 
-契约模块是两半边的公共语言：一个宿主选择器、一条私有路由、一项宿主服务、一个偏好键、一段时间或一个用量桶的形状，只在那里定义一次。
+The contracts module is the two halves' common language: the shape of a host selector, a private route, a host service, a preference key, a moment or a usage bucket is defined once, there.
 
-## 不变量
+## Invariants
 
-这些约束跨过模块边界，改动任何一处之前先读：
+These constraints cross module boundaries; read them before changing anything here:
 
-- **失败就抛出**(D12)：错误在发生的地方抛出，不吞掉、不静默回退；允许的捕获旁边写明理由，拆解是唯一的清理点。
-- **宿主查询只走一处**(D3、D75)：同一处宿主查询或同一种选择器出现第二遍时，把它移进宿主访问模块；选择器写进契约模块，并在功能清单里登记。宿主服务的读取同样只走一处：功能调用宿主访问模块里按用途命名的访问器，服务名与它读成的形状只在那里写一遍。
-- **页面上变化的观察只有一个总线，每帧的写入只有一个管线**(D40)：功能不各自建立观察者，不各自查询整份文档，不各自请求动画帧。总线与管线都由引擎提供，功能的观察登记走它。
-- **引擎不认识皮肤**(D73)：引擎不得导入浏览器半边、宿主半边或带皮肤词汇的生成模块；它需要的皮肤词汇从交接缝进来，`npm run lint` 拒绝任何反向导入。
-- **资源只有一条路径**：图片与图形资源都由构建算出内容哈希，由文件自己的大小决定内联进产物还是走宿主半边那条通用路由；路由只认清单里出现过的名字。延后功能的块与它的映射文件走同一条路由。
-- **时刻、缓动曲线与层级只从令牌读**(D9)：`theme/tokens.json` 是唯一来源，样式表与脚本读同一个值，功能不各自读系统设置。
-- **样式表归属唯一**(D36、D76)：属于某个功能的写进它的清单，不归属任何功能的写进构建里的主题样式表清单。
-- **`lib/` 是产物**(D47)：它由构建写出，被宿主加载器读取，从不手工编辑、从不提交。
+- **Fail fast** (D12): an error is thrown where it happens, not swallowed and not silently fallen back from; an allowed catch states its reason beside it, and teardown is the only cleanup point.
+- **Host queries go through one place** (D3, D75): when the same host query or the same kind of selector appears a second time, move it into the host access module; a selector is written into the contracts module and registered in the feature manifest. Reading a host service also goes through one place: a feature calls an accessor in the host access module named for what it does, and the service name and the shape it is read into are written only there.
+- **There is one bus for observing page changes and one pipeline for each frame's writes** (D40): features do not set up observers of their own, do not each query the whole document, and do not each request an animation frame. The bus and the pipeline are provided by the engine, and a feature's observations are registered through it.
+- **The engine does not know the skin** (D73): the engine may not import the browser half, the host half, or a generated module carrying the skin's vocabulary; the skin vocabulary it needs comes through the seam, and `npm run lint` rejects any reverse import.
+- **Assets have one path**: image and graphic assets have their content hashed by the build, and the file's own size decides whether it is inlined into the artifact or served through the host half's generic route; the route recognizes only names that appear in the manifest. A deferred feature's chunk and its map file go through the same route.
+- **Moments, easing curves and layers are read only from tokens** (D9): `theme/tokens.json` is the only source, stylesheets and scripts read the same value, and features do not each read system settings.
+- **A stylesheet has one owner** (D36, D76): one that belongs to a feature goes into its manifest, and one that belongs to no feature goes into the build's theme stylesheet list.
+- **`lib/` is the artifact** (D47): the build writes it, the host loader reads it, and it is never edited by hand and never committed.
 
-## 一次加载的路径
+## The path of one mount
 
-`npm run build` 把 `packages/client/src/` 与 `packages/host/src/` 编成 `lib/`：宿主半边是 `lib/host/index.js`，浏览器半边是单文件的 `lib/client.js`，资源落在 `lib/assets/`。宿主加载器读前者，把后者交给页面，页面带着引导数据调用 `apply(ctx)`。
+`npm run build` compiles `packages/client/src/` and `packages/host/src/` into `lib/`: the host half is `lib/host/index.js`, the browser half is the single file `lib/client.js`, and assets land in `lib/assets/`. The host loader reads the former, hands the latter to the page, and the page calls `apply(ctx)` with the boot data.
 
-## 检查
+## Checks
 
-每条不变量都有一个检查守着，它们跟着源码走，不跟着文档走：`npm run lint` 管不需要构建的规则，`npm run build` 在打包时检查导入图、选择器、样式表作用域与资源对应关系，逻辑层与机制层的规范（`npm test`）经声明的逻辑面与各包的公开模块核对函数与机制，冒烟（`npm run smoke`）在替代宿主页面上核对产物的装载与拆除，行为层的规范（`npm run behaviour`）在同一页面上核对读者看得见的结果，端到端通道（`npm run verify -- --e2e`）在真实宿主上核对行为，各档都由 `npm run verify` 发起(D87)。一条规则能被工具执行时，它写在检查里，不写在文档里(D48)。
+Every invariant has a check guarding it, and the checks follow the source, not the documents: `npm run lint` handles the rules that need no build, `npm run build` checks the import graph, selectors, stylesheet scoping and asset correspondence while bundling, the logic- and mechanism-layer specs (`npm test`) check functions and mechanisms through the declared logic surface and each package's public modules, the smoke (`npm run smoke`) checks the artifact's mount and teardown on a stand-in host page, the behaviour-layer specs (`npm run behaviour`) check what the reader can see on the same page, and the end-to-end lane (`npm run verify -- --e2e`) checks behaviour on the real host; every tier is started by `npm run verify` (D87). When a rule can be enforced by a tool, it is written in a check, not in a document (D48).

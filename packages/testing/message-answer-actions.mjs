@@ -78,12 +78,12 @@ function messageAnswerActionsScenario({ check }) {
       const deleted = notes.deleted ?? {}
       const restored = notes.restored ?? {}
       return [
-        check('两轮会话与两条回答都已就位', notes.before?.prompts?.length === 2 && notes.before?.answers === 2, JSON.stringify(notes.before)),
-        check('正在运行的回答不提供重跑或删除', notes.runningButtons === 0, `buttons=${notes.runningButtons}`),
-        check('重跑中间回答只重放该轮提问并创建新分岔', reran.sessionId !== notes.before?.sessionId && reran.prompts?.length === 1 && reran.prompts[0].includes('hello there') && !reran.prompts[0].includes('second turn') && reran.answers === 1 && reran.draft === '', JSON.stringify(reran)),
-        check('删除中间轮次创建不含该轮及后续内容的新分岔', deleted.sessionId !== reran.sessionId && deleted.prompts?.length === 0 && deleted.answers === 0 && deleted.draft === '', JSON.stringify(deleted)),
-        check('删除后的会话在页面重载后仍保持该前缀', (restored.sessionId === deleted.sessionId || restored.sessionId === null) && restored.prompts?.length === 0 && restored.answers === 0, JSON.stringify(restored)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('two turns and two answers are in place', notes.before?.prompts?.length === 2 && notes.before?.answers === 2, JSON.stringify(notes.before)),
+        check('a running answer offers no rerun or delete', notes.runningButtons === 0, `buttons=${notes.runningButtons}`),
+        check('rerunning the middle answer replays only that turn\'s prompt and opens a new branch', reran.sessionId !== notes.before?.sessionId && reran.prompts?.length === 1 && reran.prompts[0].includes('hello there') && !reran.prompts[0].includes('second turn') && reran.answers === 1 && reran.draft === '', JSON.stringify(reran)),
+        check('deleting the middle turn opens a new branch without that turn or anything after it', deleted.sessionId !== reran.sessionId && deleted.prompts?.length === 0 && deleted.answers === 0 && deleted.draft === '', JSON.stringify(deleted)),
+        check('after a reload the deleted conversation keeps that prefix', (restored.sessionId === deleted.sessionId || restored.sessionId === null) && restored.prompts?.length === 0 && restored.answers === 0, JSON.stringify(restored)),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

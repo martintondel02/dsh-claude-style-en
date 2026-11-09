@@ -27,7 +27,7 @@ import type { StatsReading } from './stats-count'
  * before them keeps the line's own tone.
  *
  * The host's statistics row stays in the document, hidden, because the panel
- * reads the 「性能与用量」 level off its structure. The words come from the
+ * reads the "Performance and Usage" level off its structure. The words come from the
  * host's own `chat` templates with each number swapped for a marker, so every
  * number stays its own figure. A line too wide for its card drops figures one
  * step at a time and never changes height, or the conversation above it would

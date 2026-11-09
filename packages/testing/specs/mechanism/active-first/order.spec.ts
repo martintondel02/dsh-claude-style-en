@@ -53,7 +53,7 @@ function phaseDot() {
 
 /** The seats a reader sees, in order. */
 function order(list: Element) {
-  // 座位的名字从行自己的 data-row-key 里读（合同里的常量），不另写一个宿主属性。
+  // The seat names are read from the row's own data-row-key (a constant from the contract), not from another host attribute.
   return [...list.querySelectorAll<HTMLElement>(`[${SESSION_ROW_KEY_ATTRIBUTE}]`)].map(row => {
     const key = row.getAttribute(SESSION_ROW_KEY_ATTRIBUTE) ?? ''
     return key.startsWith('session:') ? key.slice('session:'.length) : key

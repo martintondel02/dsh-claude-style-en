@@ -1,5 +1,5 @@
 /* ============================================================================
-   主题翻转：瞬时抑制过渡 (Theme Flip: Transition Suppression)
+   Theme Flip: Transition Suppression
    ============================================================================ */
 /* While a theme flip is in flight, every skin surface must swap in ONE
    recalc: the composer card/input/rail keep 0.12s border/box-shadow

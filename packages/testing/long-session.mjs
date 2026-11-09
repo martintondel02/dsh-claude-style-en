@@ -149,16 +149,16 @@ function longSessionScenario({ check }) {
       const longTotal = measured.longtasks.reduce((sum, duration) => sum + duration, 0)
       const filled = notes.filled ?? { nodes: 0, rows: 0 }
       const rounds = [
-        check('测量前已经积累了多轮对话，测量那一轮又长了',
+        check('several turns are already on the page before the measurement, and the measured turn grows it',
           filled.rows >= FILL_TURNS * 2 && measured.rows > filled.rows,
           `rows ${filled.rows} → ${measured.rows}, nodes ${filled.nodes} → ${measured.nodes}`),
-        check('采样覆盖了整条流式回答', span >= MIN_SPAN_MS, `${Math.round(span)}ms over ${measured.frames.length} frames`),
-        check('长时间任务没有占满这一轮', longTotal < LONG_TASK_BUDGET_MS,
+        check('the sampling covers the whole streamed answer', span >= MIN_SPAN_MS, `${Math.round(span)}ms over ${measured.frames.length} frames`),
+        check('long tasks do not fill the turn', longTotal < LONG_TASK_BUDGET_MS,
           `${measured.longtasks.length} long tasks totalling ${longTotal}ms`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
       const short = notes.short
-      if (short === undefined) return [...rounds, check('同一轮在两个长度的会话上都量过', false, 'the short round recorded nothing')]
+      if (short === undefined) return [...rounds, check('the same turn is measured on both conversation lengths', false, 'the short round recorded nothing')]
       const shortCost = cost(short)
       const longCost = cost(measured)
       const ratio = short.rows === 0 ? 0 : measured.rows / short.rows
@@ -166,10 +166,10 @@ function longSessionScenario({ check }) {
       const readings = `rows ${short.rows} → ${measured.rows} (×${ratio.toFixed(2)}), queries ${short.queries} → ${measured.queries}, ` +
         `long tasks ${shortCost.longTotal}ms → ${longCost.longTotal}ms, p95 ${shortCost.p95}ms → ${longCost.p95}ms`
       rounds.push(
-        check('两轮量的是同一个长度比：会话长了几倍，这一轮的量也长了几倍',
+        check('both rounds measure the same length ratio: the conversation grew by a factor, and so did this round',
           ratio >= GROWTH_RATIO && measured.rows > short.rows,
           readings),
-        check('整份文档的查找次数不随会话长度放大', measured.queries <= short.queries * ratio * QUERY_SLACK + 1, readings),
+        check('whole-document lookups do not scale with the conversation length', measured.queries <= short.queries * ratio * QUERY_SLACK + 1, readings),
         // The long tasks are printed with the two checks below and bounded by
         // the budget above, not compared between the rounds: the host commits
         // every streamed batch in a frame task of its own, and on a long
@@ -177,7 +177,7 @@ function longSessionScenario({ check }) {
         // measures the host's frame size as much as the skin's pass. A cost
         // that follows the rows or their square shows in the two checks that
         // do compare — the whole-document lookups and the p95 frame.
-        check('这一轮的 p95 帧时不随会话长度放大',
+        check('this round\'s p95 frame time does not scale with the conversation length',
           longCost.p95 <= shortCost.p95 * allowed + GROWTH_FLOOR_MS, readings),
       )
       return rounds

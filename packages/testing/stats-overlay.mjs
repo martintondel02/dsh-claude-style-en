@@ -225,7 +225,7 @@ function statsFooterScenario({ check }) {
         check('the overlaid figures leave no reserved dock below the card',
           state.dock !== null && state.dock.height === 0 && state.dockMinHeight === '0px' && state.dockPaddingTop === '0px',
           JSON.stringify(state)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }
@@ -292,11 +292,11 @@ function statsOverlayScenario({ check }) {
         check('a press with the panel standing open leaves it up, on the same panel the reader had',
           kept.before === true && kept.same === true && afterPress.open === true && afterPress.expanded === 'true',
           JSON.stringify({ ...kept, ...afterPress })),
-        check('页面缩放到 125% 时，上下文弹层仍贴在计量圆环上方并留在窗口内',
+        check('at 125% page zoom the context popover still sits above the meter ring and stays inside the window',
           popover.painted > 0 && popover.placed && popover.cornerFrames === 0 && popover.belowRingFrames === 0 &&
             popover.gap !== null && popover.gap >= 7 && popover.gap <= 9 && popover.outsideWindowFrames === 0,
           JSON.stringify({ painted: popover.painted, placed: popover.placed, gap: popover.gap, corner: popover.cornerFrames, below: popover.belowRingFrames, settled: popover.settled })),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

@@ -98,27 +98,27 @@ function customBrandScenario({ check }) {
       // failed loads; every other console line is a problem.
       const problems = session.problems.filter((line) => !/Failed to load resource: the server responded with a status of (400|413|415)/.test(line))
       return [
-        check('一开始宿主半边没有自定义品牌图',
+        check('the host half starts with no custom brand image',
           routes.before.ok === true && routes.before.mark === null && routes.before.wordmark === null, JSON.stringify(routes.before)),
-        check('不收的类型、与类型不符的字节、超过上限的图依次答 415、400、413',
+        check('an unaccepted type, bytes that do not match their type, and an oversized image answer 415, 400 and 413 in turn',
           routes.wrongType === 415 && routes.wrongBytes === 400 && routes.oversized === 413,
           JSON.stringify({ wrongType: routes.wrongType, wrongBytes: routes.wrongBytes, oversized: routes.oversized })),
-        check('标志与文字标志存下后，状态里两张都在，各带类型与版本',
+        check('once the mark and wordmark are stored, the status carries both, each with its type and version',
           routes.wordmark.status === 200 && routes.wordmark.answer.mark?.type === 'image/png' &&
             routes.wordmark.answer.wordmark?.type === 'image/svg+xml' && typeof routes.wordmark.answer.wordmark?.version === 'string',
           JSON.stringify(routes.wordmark)),
-        check('图按自己的类型送出，带禁止脚本的安全策略',
+        check('the image is served under its own type with a script-blocking policy',
           routes.served.status === 200 && routes.served.type === 'image/png' && /sandbox/.test(routes.served.policy ?? ''),
           JSON.stringify(routes.served)),
-        check('侧栏的标志与新会话页的标志画的是这张图',
+        check('the sidebar mark and the hero mark paint this image',
           painted.mark !== null && painted.mark.image.includes(ROUTES.mark) && painted.mark.width === '18px' &&
             painted.hero !== null && painted.hero.image.includes(ROUTES.mark),
           JSON.stringify({ mark: painted.mark, hero: painted.hero })),
-        check('文字标志按 4:1 的比例随 18 像素高度换算宽度',
+        check('the wordmark takes its width from its 4:1 ratio at an 18px height',
           painted.word !== null && painted.word.image.includes(ROUTES.wordmark) && painted.word.width === '72px' && painted.word.height === '18px',
           JSON.stringify(painted.word)),
-        check('移除之后状态里两张都不在', after.mark === null && after.wordmark === null, JSON.stringify(after)),
-        check('控制台没有异常', problems.length === 0, problems.slice(0, 3).join(' | ')),
+        check('once both are removed neither stands in the status', after.mark === null && after.wordmark === null, JSON.stringify(after)),
+        check('the console reports no errors', problems.length === 0, problems.slice(0, 3).join(' | ')),
       ]
     },
   }

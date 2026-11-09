@@ -303,7 +303,7 @@ export function createAccountRows(options: { hostMenu: HostAccountMenu, openBan(
 
   /**
    * The settings row names and opens whatever the host's settings entry is:
-   * its settings button, or the 设置 item of its account menu. The
+   * its settings button, or the Settings item of its account menu. The
    * self-built path is used exactly when the host has no account area, so
    * there is no host copy of this row to step aside for.
    */

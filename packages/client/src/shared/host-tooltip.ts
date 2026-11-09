@@ -3,43 +3,56 @@ import * as reactDom from 'react-dom/client'
 import * as primitives from '@deepseek-ai/dsh-client-ui-primitives'
 
 /**
- * 一个不归 React 管的控件挂上宿主自己的提示气泡。
+ * Hangs the host's own tooltip on a control React does not own.
  *
- * 宿主的 Tooltip 只接受一个 React 元素作锚点，并把气泡摆在那个元素的矩形旁边；
- * 所以控件外面套两层：调用方插进页面的那一层是 `display: contents`（不占排布），
- * React 画的那一层是控件真正的盒子 —— 尺寸跟着控件，气泡因此落在控件旁边。
- * 控件由 React 的 ref 交进内层，指针与焦点事件照样冒上来。
+ * The host's Tooltip takes a React element as its anchor and places the bubble
+ * beside that element's rect, so the control is wrapped in two layers: the layer
+ * the caller inserts is `display: contents` (it takes no layout), and the layer
+ * React draws is the control's real box — its size follows the control, which
+ * puts the bubble beside it. React's ref hands the control into the inner layer,
+ * and pointer and focus events still bubble up.
  *
- * 用它的地方是那些由皮肤直接拼出来的控件：浏览器原生的 `title` 与宿主自己的
- * 提示同屏时会露出两种样式。
+ * It is used where the skin builds a control directly: a browser-native `title`
+ * beside the host's own tooltip would show two different looks.
  */
 
 export interface HostTooltipOptions {
   side?: 'right' | 'bottom' | 'top'
-  /** 气泡出现前等多久；宿主的行内动作按钮都在指针停稳后才出来。 */
+  /**
+   * How long to wait before the bubble appears; the host's inline action buttons
+   * all appear once the pointer settles.
+   */
   delayMs?: number
   /**
-   * 内层盒子自己的类名，用来让它参与父级的排布（被省略号截断的标题要一个
-   * 撑满的 flex 项）。不交时内层是 `inline-flex`，尺寸由控件决定。
+   * The inner box's own class name, so it takes part in the parent's layout (a
+   * title elided with an ellipsis needs a flex item that fills). Without it the
+   * inner box is `inline-flex`, sized by the control.
    */
   className?: string
-  /** 气泡挂到 body 下（默认），因此不被列表、侧栏这类会滚动或裁切的外层剪掉。 */
+  /**
+   * The bubble hangs under the body (the default), so a scrolling or clipping
+   * ancestor such as a list or the sidebar never cuts it off.
+   */
   portal?: boolean
 }
 
 export interface HostTooltip {
-  /** 插到控件原来位置的那层外壳。 */
+  /** The shell inserted where the control stood. */
   readonly node: HTMLElement
-  /** 换一句提示。 */
+  /** Swap the tip's text. */
   setLabel(label: string): void
-  /** 拆掉提示：控件退回外壳原来的位置，控件本身留着。 */
+  /**
+   * Take the tip down: the control goes back to the shell's place, and the control
+   * itself stays.
+   */
   release(): void
 }
 
 /**
- * 一个 React 元素当宿主 Tooltip 的锚点。宿主往锚点上注入自己的属性
- * （`aria-describedby` 与几个事件），类型因此要求元素声明其中之一；元素本身
- * 本来就要接受这些属性，这里只是把那个要求写明白。
+ * A React element as the host Tooltip's anchor. The host injects its own
+ * attributes into the anchor (`aria-describedby` and a few events), so the type
+ * requires the element to declare one of them; the element accepts those
+ * attributes anyway, and this only writes that requirement out.
  */
 export function tooltipAnchor(element: React.ReactElement): React.ReactElement<{ 'aria-describedby'?: string }> {
   return element as React.ReactElement<{ 'aria-describedby'?: string }>
@@ -50,7 +63,10 @@ export function hostTooltip(control: HTMLElement, label: string, options: HostTo
   mount.style.display = 'contents'
   let text = label
   const root = reactDom.createRoot(mount)
-  /** 控件自己留在内层盒子里：React 只管锚点这一层，不重画控件的内容。 */
+  /**
+   * The control itself stays in the inner box: React owns the anchor layer only
+   * and never redraws the control's content.
+   */
   function adopt(node: HTMLElement | null) {
     if (node === null || control.parentNode === node) return
     node.appendChild(control)

@@ -13,7 +13,7 @@ export default {
   ],
   settingsRows: [{
     tab: 'motion',
-    // 排在动效页末尾：这一行说的是思考文字怎么出现，与上面那些开关不属于同一类调整。
+    // At the end of the motion tab: this row is about how reasoning text appears, a different kind of adjustment from the switches above.
     rank: 50,
     pref: 'reasoningDisplay',
     title: 'reasoningDisplayTitle',

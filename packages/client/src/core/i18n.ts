@@ -7,13 +7,13 @@ export type CopyParams = Record<string, string | number>
 /** One copy line: the text in each language it ships in. */
 export type CopyPair = Readonly<Record<string, string>>
 
-/** A feature's own copy, by key (its `<功能>.copy.json`). */
+/** A feature's own copy, by key (its `<feature>.copy.json`). */
 export type CopyEntries = Readonly<Record<string, CopyPair>>
 
 /**
  * The language a copy line falls back to when the shell's own language has no
  * line for it. A feature's copy ships with the bundle, so every line is written
- * in this language as well (`<功能>.copy.json` beside the feature).
+ * in this language as well (`<feature>.copy.json` beside the feature).
  */
 export const COPY_FALLBACK_LOCALE = 'en'
 

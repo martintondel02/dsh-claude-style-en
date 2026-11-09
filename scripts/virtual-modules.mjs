@@ -81,7 +81,7 @@ export function chunkModulesModule(ids) {
 /**
  * The table the settings page resolves its own row controls from,
  * `virtual:dsh-claude-style/settings-controls` (D72): each feature that draws a
- * control or a status line itself exports them from `<功能>.settings.ts` beside its main module,
+ * control or a status line itself exports them from `<feature>.settings.ts` beside its main module,
  * and the settings page — the only importer — carries them with its own chunk.
  *
  * @param manifests - the feature manifests in install order.

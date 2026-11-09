@@ -30,8 +30,8 @@ export function createHomeOverview() {
       'div',
       { key, className: 'dsh-claude-home-stat', 'data-stat': key, 'data-skeleton': skeleton ? '' : undefined },
       React.createElement('span', { className: 'dsh-claude-home-stat-label' }, label),
-      // 缩短过的数字（12.3k）在悬停时给出原值：提示是宿主自己的那一份，
-      // 与页面上其他控件同一个样式。
+      // The shortened number (12.3k) gives its full value on hover: the tip is the host's own,
+      // styled like every other control on the page.
       skeleton ? value : React.createElement(primitives.Tooltip, { label: text, side: 'bottom', portal: true, children: tooltipAnchor(value) }),
     )
   }

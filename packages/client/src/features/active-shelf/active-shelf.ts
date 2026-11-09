@@ -12,45 +12,46 @@ import type { HostTooltip } from '../../shared/host-tooltip'
 /**
  * The sidebar's workspace section header: the bell that switches the date view.
  *
- * 铃铛只做一件事：按下去把整个列表在「工作区 + 会话」和「按日期」之间换一次。
- * 日期视图开着时它带一层品牌色背光，读者一眼看出现在是哪种排法。
+ * The bell does one thing: pressing it switches the whole list between "Workspace + sessions" and "by date".
+ * While the date view is on it carries a brand-coloured glow, so the reader sees at a glance which order is in force.
  *
- * 位置在宿主的「工作区」标题行右端，插在它自己的两枚分区动作之前：那一行本来就是
- * 分区的动作区，铃铛和它们同排读成一组。标题行只在侧栏宽的时候画出来，窄栏里铃铛
- * 就不挂。
+ * It sits at the right end of the host's "Workspace" heading row, before its own two section actions: that row is
+ * the section's action area, and the bell reads as one group with them. The heading row is drawn only while the
+ * sidebar is wide; in a narrow sidebar the bell is not mounted.
  *
- * 搜索不从这一行给入口：「独立」风格下皮肤自己的搜索按钮已经在上方，`icon` 风格下
- * 宿主自己的搜索按钮就站在这一行，两种都已有入口，再加一枚只会重复。
+ * Search gets no entry from this row: under the `standalone` style the skin's own search button is already above,
+ * and under the `icon` style the host's own search button stands in this row; both already have an entry, so a
+ * third would only repeat.
  */
 
-/** 日期视图开着：铃铛读它画按下态（无障碍也读它）。 */
+/** The date view is on: the bell reads it to draw its pressed state (accessibility reads it too). */
 const DATE_VIEW_ATTRIBUTE = 'data-dsh-claude-date-groups'
-/** 分区的标题行（parts-table 的 section-header）。 */
+/** A section's heading row (the parts table's section-header). */
 const SECTION_HEADER_SELECTOR = '[data-dsh-claude-part~="section-header"]'
-/** 标题行里的「工作区」小字：宿主在窄栏里不画它，那铃铛也就没有座位。 */
+/** The "Workspace" label in the heading row: the host draws none in a narrow sidebar, and then the bell has no seat. */
 const SECTION_LABEL_SELECTOR = '[data-dsh-claude-part~="section-label"]'
-/** 宿主自己的两枚分区动作（筛选与新建工作区）：铃铛插在它们前面。 */
+/** The host's own two section actions (filter and new workspace): the bell is inserted ahead of them. */
 const SECTION_ACTIONS_SELECTOR = '[data-dsh-claude-part~="section-actions"]'
 
-/** 铃铛：同一套 16px 网格与 1px 描边，墨迹范围与旁边宿主的图标相当。 */
+/** The bell: the same 16px grid and 1px stroke, so its inked area matches the host icons beside it. */
 const BELL_SVG = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.9a3.6 3.6 0 0 0-3.6 3.6v2.2c0 1.4-.5 2.5-1.4 3.4h10c-.9-.9-1.4-2-1.4-3.4V6.5A3.6 3.6 0 0 0 8 2.9Z"/><path d="M6.6 12.3a1.4 1.4 0 0 0 2.8 0"/></svg>'
 
-/** 我们自己的写入打上静音标记：宽观测听见它们时不再算一次页面变化，免得自激。 */
+/** Our own writes carry the quiet mark: the wide observer hearing them does not count another page change, which would feed itself. */
 function quiet(node: HTMLElement) {
   node.setAttribute(QUIET_ATTR, '')
 }
 
 export function install(ctx: HostContext) {
-  /** 铃铛的盒子；标题行重建或窄栏时会被摘下来，下一遍再挂回去。 */
+  /** The bell's box; it is taken down when the heading row is rebuilt or the sidebar narrows, and mounted again on the next pass. */
   let actions: HTMLElement | null = null
-  /** 铃铛本身。 */
+  /** The bell itself. */
   let trigger: HTMLButtonElement | null = null
-  /** 铃铛的宿主提示气泡：换文案与拆掉时一起管。 */
+  /** The bell's host tooltip: it carries the label changes and is taken down with the bell. */
   let tip: HostTooltip | null = null
-  /** 等这一帧写。 */
+  /** Cancels the frame the pass waits on. */
   let cancelFrame: (() => void) | null = null
 
-  /** 铃铛：按下换视图。 */
+  /** The bell: pressing it switches the view. */
   function buildTrigger() {
     const button = buildElement('button', 'dsh-claude-active-shelf-trigger')
     button.type = 'button'
@@ -62,15 +63,16 @@ export function install(ctx: HostContext) {
     button.addEventListener('click', event => {
       event.preventDefault()
       event.stopPropagation()
-      // 日期视图默认关着：按它排成日期段落，再按一次换回宿主的「工作区 + 会话」。
+      // The date view is off by default: pressing it orders date sections, pressing again returns to the host's "Workspace + sessions".
       document.dispatchEvent(new CustomEvent(DATE_VIEW_TOGGLE_EVENT))
     })
     return button
   }
 
   /**
-   * 会话列表所在的分区标题行：标题行与列表区是同一个盒子下的两个兄弟，靠这条关系
-   * 认它，不靠标题文字。窄栏里宿主不画标题，这一遍就返回 null，铃铛随之摘走。
+   * The section heading row the session list stands in: the heading row and the list area are two siblings under
+   * the same box, and that relation identifies it, not the heading text. The host draws no heading in a narrow
+   * sidebar, so this pass returns null and the bell goes with it.
    */
   const LIST_AREA_SELECTOR = '[data-dsh-claude-part~="list-area"]'
   function findSectionHeader(): HTMLElement | null {
@@ -83,7 +85,7 @@ export function install(ctx: HostContext) {
     return null
   }
 
-  /** 挂进「工作区」标题行的右端，插在宿主自己的两枚分区动作之前；没有这一行时摘走。 */
+  /** Seat it at the right end of the "Workspace" heading row, ahead of the host's own two section actions; take it down when the row is absent. */
   function seatActions() {
     const header = findSectionHeader()
     if (header === null) {
@@ -94,8 +96,8 @@ export function install(ctx: HostContext) {
       actions = buildElement('div', 'dsh-claude-active-shelf-actions')
       quiet(actions)
       trigger = buildTrigger()
-      // 铃铛由皮肤拼出来，提示仍用宿主自己的气泡：浏览器原生的 title 会和宿主
-      // 的提示同屏露出两种样式。气泡的锚点包一层 display: contents，不占排布。
+      // The bell is assembled by the skin, but its tip still uses the host's own bubble: the browser's native
+      // title would show a second style on screen beside the host's tips. The bubble's anchor is wrapped in display: contents and takes no layout.
       tip = hostTooltip(trigger, copy('viewByDate'), { side: 'bottom' })
       actions.appendChild(tip.node)
     }
@@ -107,7 +109,7 @@ export function install(ctx: HostContext) {
     else header.appendChild(actions)
   }
 
-  /** 一遍：挂好铃铛，再让它说实话（按下态与名字）。 */
+  /** One pass: seat the bell, then let it tell the truth (pressed state and name). */
   function pass() {
     seatActions()
     if (trigger === null) return
@@ -118,7 +120,7 @@ export function install(ctx: HostContext) {
     tip?.setLabel(label)
   }
 
-  /** 等这一帧写：宿主的重建会连着来几次，攒到一帧里只做一遍。 */
+  /** Wait for this frame to write: the host's rebuilds come several times in a row and collapse into one pass here. */
   function schedule() {
     if (cancelFrame !== null) return
     cancelFrame = requestFrame({
@@ -129,9 +131,9 @@ export function install(ctx: HostContext) {
     })
   }
 
-  /** 宿主的顶行会重建、列表的行会在列表之间搬：都只算侧栏里的变化，挂好再走一遍。 */
+  /** The host rebuilds its top row and moves rows between lists: both count as sidebar changes, and the bell is seated and the pass runs again. */
   const stopWatch = watchSidebar(schedule)
-  /** 侧栏里的分区标题行，由总线按选择器维护（D40）：标题行重建时铃铛跟着重挂。 */
+  /** The sidebar's section heading rows, kept by the bus by selector (D40): a rebuilt heading row re-mounts the bell with it. */
   const headerWatch = observeMatches<HTMLElement>(SECTION_HEADER_SELECTOR, schedule)
 
   pass()

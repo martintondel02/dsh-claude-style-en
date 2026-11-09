@@ -1,26 +1,26 @@
-# D79. 模型规则同时读标识与显示名
+# D79. Model rules read both the id and the display name
 
-## 背景
+## Background
 
-宿主的模型目录里一个模型有两个字段：标识（发给提供方的那一串）和显示名称（用户在设置里可改的那一串）。中转站与自建服务常把标识写成自家内部的别名（`kmodel`、`dashscope_qmodel`），真正说明这是哪个模型的是用户写在第二列的显示名称（`kimi-k2.6`、`qwen-3.6-plus`）。文案规则与厂商组合标只读标识时，这类行的说明是空的、也画不出厂商标，而它们恰恰是最需要这两样的一批行；用户把显示名称写成模型的正式名，本就是想让界面按那个名字读。
+In the host's model catalog a model has two fields: the id (the string sent to the provider) and the display name (the string the user can change in settings). Relay stations and self-hosted services often write the id as an alias of their own (`kmodel`, `dashscope_qmodel`), and what actually says which model this is, is the display name the user writes in the second column (`kimi-k2.6`, `qwen-3.6-plus`). When copy rules and vendor lockups read only the id, these rows have no description and draw no vendor mark, and they are exactly the rows that need both most; a user who writes the model's official name as the display name wants the interface to read it by that name.
 
-## 决定
+## Decision
 
-- 一条文案规则或一条厂商规则，按模型标识、再按显示名称依次试；命中的是第一个有规则认领的候选。
-- 标识排在显示名称之前：标识是提供方与宿主共同认定的那一串，换了显示名称不会把一行从它自己的规则上挪走，也不会让改名的行抢走别的行已经认领的文案。
-- 厂商组合标的候选只有这两个，提供方路由仍不参与：中转站的标打在它没做的模型上，读起来是错的答案。
-- 家族规则还多一个候选：`提供方/标识`，位置在标识与显示名称之间，只由标识构成。显示名称是用户自己的拼法，不构成路由。
-- 两个字符串先折成小写再交给规则，规则本身仍带 `i` 标记。
-- 选择器的重绘签名带上每一行的显示名称：改名要让卡片当场重画，否则要等下一次翻页才看得到。
+- A copy rule or a vendor rule tries the model id first, then the display name; the first candidate with a rule claiming it is the match.
+- The id comes before the display name: the id is the string the provider and the host agree on, so changing the display name does not move a row off its own rule, nor let a renamed row take the copy another row has already claimed.
+- Vendor lockups have only these two candidates, and the provider route still plays no part: a relay station's mark on models it did not make reads as the wrong answer.
+- A family rule has one more candidate: `provider/id`, positioned between the id and the display name and formed from the id alone. A display name is the user's own spelling and forms no route.
+- Both strings are folded to lowercase before they reach the rules, and the rules still carry the `i` flag.
+- The selector's repaint signature includes each row's display name: a rename has to repaint the card on the spot, or it would take the next page turn to show.
 
-## 后果
+## Consequences
 
-- 一条按标识锚定的规则（`deepseek.*flash`）对标识是别名的行不起作用，这类行靠显示名称落到更宽的家族规则上；想让它们读到更具体的文案，要把显示名称写成与标识同样的形状。
-- 显示名称由用户填写，规则表读到的字符串因此是用户的内容；规则仍只做匹配，文案与厂商标始终来自随包发布的文档。
-- 一个模型换了显示名称，它的说明行与厂商标可能跟着换；这是用户改写第二列时看得见的直接结果。
-- 放弃的方案：只读显示名称。中转站的显示名称常是留空的，此时第二列回落成标识，读名称等于什么都没读。
-- 放弃的方案：让用户为每个模型手填文案与厂商标。目录一变就要重填一遍，与文案是数据、扩充文案表不改代码的方向相反（D5）。
+- A rule anchored on the id (`deepseek.*flash`) does not apply to rows whose id is an alias; those rows land on a broader family rule through the display name. To make them read more specific copy, write the display name in the same shape as the id.
+- The display name is filled in by the user, so the string the rule table reads is the user's content; the rules still only match, and the copy and vendor marks always come from the document shipped with the package.
+- When a model's display name changes, its description line and vendor mark may change with it; that is the visible, direct result of the user rewriting the second column.
+- Abandoned: reading only the display name. A relay station's display name is often left empty, and the second column then falls back to the id, so reading the name reads nothing.
+- Abandoned: having the user fill in the copy and vendor mark by hand for every model. Every catalog change would mean filling them again, the opposite of the direction that copy is data and extending the copy table changes no code (D5).
 
-## 重审条件
+## Reconsider when
 
-- 宿主的模型目录接口直接给出厂商与本地化文案时，规则表整体退出，改读宿主的字段。
+- When the host's model catalog interface provides the vendor and localized copy directly, the rule table retires as a whole and those fields are read instead.

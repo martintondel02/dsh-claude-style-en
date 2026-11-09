@@ -49,12 +49,12 @@ function systemTypographyScenario() {
       const codeMono = reading.code !== null && reading.code.includes('ui-monospace') && !reading.code.includes('Noto Serif')
       const mathOwn = reading.math !== null && !reading.math.includes('system-ui')
       return [
-        check('界面、正文、H1–H6 与表格都读取系统无衬线字体', systemText && reading.headings === 6 && reading.tableCells > 0, JSON.stringify(reading)),
-        check('代码保留独立等宽字体栈', codeMono, JSON.stringify(reading.code)),
-        check('数学公式保留渲染器自己的字体', mathOwn, JSON.stringify(reading.math)),
-        check('真正的斜体仍为斜体', reading.italics.length > 0 && reading.italics.every((style) => style === 'italic'), JSON.stringify(reading.italics)),
-        check('语言与方向属性保留', reading.languages.some(([lang, dir]) => lang === 'ar' && dir === 'rtl') && reading.languages.some(([lang, dir]) => lang === 'he' && dir === 'rtl'), JSON.stringify(reading.languages)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the interface, body text, H1–H6 and tables all read the system sans font', systemText && reading.headings === 6 && reading.tableCells > 0, JSON.stringify(reading)),
+        check('code keeps its own monospace stack', codeMono, JSON.stringify(reading.code)),
+        check('math keeps the renderer\'s own font', mathOwn, JSON.stringify(reading.math)),
+        check('real italics stay italic', reading.italics.length > 0 && reading.italics.every((style) => style === 'italic'), JSON.stringify(reading.italics)),
+        check('language and direction attributes stay', reading.languages.some(([lang, dir]) => lang === 'ar' && dir === 'rtl') && reading.languages.some(([lang, dir]) => lang === 'he' && dir === 'rtl'), JSON.stringify(reading.languages)),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

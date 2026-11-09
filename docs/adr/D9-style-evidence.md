@@ -1,36 +1,36 @@
-# D9. CSS 的证据与令牌
+# D9. Evidence and tokens for CSS
 
-- **取代**：D4、D33、D37、D51、D65、D67
+- **Replaces**: D4, D33, D37, D51, D65, D67
 
-## 背景
+## Background
 
-样式是这层皮肤与宿主接触最密的地方：选择器写在别人的结构上，颜色、层级与动效又要与别人的取值共处。同一件事原先在样式表、脚本常量与文档里各写一份，改一处要靠人去搜其余几处；重要性、门控与归属没有记录，多写一条也不付任何代价。
+Style is where this skin touches the host most closely: selectors are written against someone else's structure, and colours, layers and motion have to coexist with someone else's values. The same fact used to be written once in a stylesheet, once in a script constant and once in a document, so changing it meant searching the other places by hand; importance, gating and ownership were not recorded, and one more line cost nothing.
 
-## 决定
+## Decision
 
-- 样式里能由构建核对的事实都写成数据与检查，读代码的人不必靠记忆与搜索维持一致。
-- 令牌只有一份数据源，配色、字体、时长、曲线、层级与位移都从它读出；样式表与文档里的表由它生成，任何一处都不再手写。
-- 一种效果只有一档：需要新的时长、曲线或层级时，先在数据源里挑已有的一档，挑不到就加一档，加档时相近的那一档就在旁边。
-- 选择器、门控、归属与重要性由语法树上的检查把关，按行与字符扫描的核对不再作为依据。
-- 依赖结构的判断由脚本写成属性，样式只读属性；反复翻动的属性写在最近的公共祖先上。
-- 结构关系只在选择器的最后一段判断，前面几段不承担这类判断。
-- 每一处 `!important` 都要有能证明它必要的证据：构建核对它压在谁身上，以及去掉之后画出的样子是否真的变了。
-- 一个区域里大多数 `!important` 压的是宿主的内联样式或它自己的 `!important` 时，这个区域改由皮肤接管渲染：宿主的那一处隐藏，数据与动作走契约模块登记的宿主服务。
-- 样式表的归属由本包自己标记，兄弟包的样式表不认领，也不指望宿主替本包收走。
-- 输入框区域的规则随一个开关整体撤下，这个开关由构建盖上。
+- Every fact in the styles that the build can check is written as data and a check, so a reader of the code does not have to keep it consistent from memory and search.
+- Tokens have one data source: palette, type, durations, curves, layers and distances are all read from it, and the stylesheets and the tables in the documents are generated from it — nothing is handwritten anywhere.
+- One effect has one rung: when a new duration, curve or layer is needed, first pick an existing rung in the data source; if none fits, add a rung, with the nearest one beside it.
+- Selectors, gating, ownership and importance are checked on the syntax tree; line- and character-scanning checks are no longer the basis.
+- A structural dependency is written as an attribute by a script, and styles only read attributes; an attribute that keeps flipping is written on the nearest common ancestor.
+- Structural relationships are judged only in the selector's last segment; the earlier segments carry none.
+- Every `!important` needs evidence that it is necessary: the build checks what it overrides, and whether the painted result really changes without it.
+- When most of the `!important` declarations in a region override the host's inline styles or its own `!important`, the skin takes over rendering that region: the host's element is hidden, and data and actions go through the host service registered in the contracts module.
+- Stylesheet ownership is marked by this package itself: a sibling package's stylesheet is not claimed, and the host is not expected to collect this package's sheets either.
+- The input box region's rules are withdrawn as a whole by a switch the build stamps.
 
-## 后果
+## Consequences
 
-- 样式表写成普通 CSS 并由构建压缩后进产物，页面上没有注释与排版，在开发者工具里要按选择器回去找源文件。
-- 构建多了解析样式表与脚本语法树的开发依赖，其中一项的接口在所用工具的当前版本里标为不稳定，升级时要一并核对。
-- 结构判断要等脚本在同一帧、绘制之前写入属性；每多一层结构关系，盖部件的代码就多写一个属性。
-- 证据的覆盖面取决于走查到达的界面；走查没走到的地方逐条登记并写明缘由，登记只许变短。选择器从未匹配、登记项已能匹配、外观与快照不同这三项记录的是宿主输出，按 D87 的分档作为观察随每次运行报告，由人读过后更新记录。
-- 合档改了一部分交互的手感：时长、曲线、位移与层级向最近的档位靠拢。
-- 放弃的做法：用层叠层安排先后，以及让样式表里的数值自己说明来由。
+- Stylesheets are plain CSS, minified by the build into the artifact: the page carries no comments or layout, and in the developer tools a reader has to follow a selector back to the source file.
+- The build gains dev dependencies that parse stylesheets and the scripts' syntax trees; one of them is marked unstable at the current version of the tool it uses, and has to be checked along with every upgrade.
+- A structural dependency waits for a script to write an attribute in the same frame, before paint; each further structural relationship means one more attribute in the part-covering code.
+- How much the evidence covers depends on the screens the walk reaches; where the walk does not reach, entries are recorded one by one with the reason, and the record may only shrink. Three signals — a selector that never matched, a recorded entry that now matches, and an appearance that differs from the snapshot — record the host's output and are reported as observations on every run under D87's tiers, for a person to read and then update the record.
+- Merging the rungs changed the feel of some interactions: durations, curves, distances and layers moved to the nearest rung.
+- Abandoned: ordering with cascade layers, and letting the numbers in a stylesheet explain their own origin.
 
-## 重审条件
+## Reconsider when
 
-- 宿主把自己的样式放进层叠层，或提供主题层级与令牌分层机制时，改用层叠层并接入宿主的层级。
-- 浏览器对非末段结构判断的失效处理实测不再明显慢于末段写法。
-- 宿主提供公开的客户端样式声明与归属方式时，归属标记改用它。
-- 宿主公开自己的动效令牌与层级令牌时，这几组改为别名到宿主的那一套。
+- The host puts its styles in cascade layers, or provides a mechanism for layering themes and tokens: switch to cascade layers and join the host's layers.
+- Measured invalidation for a non-final-segment structural judgement is no longer clearly slower than the final-segment form.
+- The host provides a public way to declare and own client styles: use it for the ownership marker.
+- The host publishes its own motion and layer tokens: alias these groups to the host's set.

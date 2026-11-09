@@ -185,25 +185,25 @@ function waitLineScenario({ check }) {
       const lastClause = words.reduce((at, word, index) => (PHRASES.includes(word) ? index : at), -1)
       const held = firstClause === -1 || lastClause === -1 ? [] : words.slice(firstClause, lastClause + 1)
       return [
-        check('推理里的进行时从句由这一行自己说出来',
+        check('the line says the progressive clause from the reasoning itself',
           words.some((word) => PHRASES.includes(word)), JSON.stringify(words)),
-        check('调用在跑时说出它读的文件',
+        check('while the call runs it names the file it reads',
           words.some((word) => READ_WORD.test(word)), JSON.stringify({ words, calls })),
-        check('从句在下一次意图到达之前一直站着，中间不退回等待词',
+        check('the clause stands until the next intent arrives, and the waiting word does not return in between',
           held.length > 0 && held.every((word) => PHRASES.includes(word)), JSON.stringify({ words, held })),
-        check('一个说法锁住一秒：状态换得再快，这一行也只一秒换一次',
+        check('a wording locks for a second: however fast the state changes, the line changes once a second at most',
           gaps.length > 0 && gaps.every((gap) => gap >= MIN_GAP_MS),
           JSON.stringify({ gaps, words })),
-        check('Claude 品牌下这一行开头换成插件自己的加载点，宿主的鲸鱼尾让位，加载点不带阴影，走的是这一轮该走的那套动作',
+        check('under the Claude brand the row head becomes the plugin\'s own loader, the host whale tail steps aside, the loader casts no shadow, and it runs the motion this turn calls for',
           head !== null && head.shown === true && head.shadow === 'none' && head.iconShown === false &&
             MOTIONS.some((motion) => head.motion.includes(motion.lane) && head.dots === motion.dots &&
               head.animation === motion.animation && head.duration === motion.duration),
           JSON.stringify(head)),
-        check('加载点站在那一行里、落在说法的行上，不探出行外',
+        check('the loader stands inside the row and on the wording\'s line, never past the row\'s edges',
           seats !== null && seats.loader.top >= seats.row.top && seats.loader.bottom <= seats.row.bottom &&
             seats.loader.top >= seats.text.top - 2 && seats.loader.bottom <= seats.text.bottom + 2,
           JSON.stringify(seats)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

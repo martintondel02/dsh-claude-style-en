@@ -1,25 +1,25 @@
-# D48. 文档分层
+# D48. Layered documentation
 
-## 背景
+## Background
 
-同一件事实被写在几处，读者无法判断哪一处还有效，改动时也总有人漏掉一处。此前的文档既描述机制又记录方向，还带着进度与索引，一次不改变方向的重构就会让大段文字过期；维护这些文字的力气与它给人的帮助不成比例。
+The same fact written in several places leaves the reader unable to tell which one still holds, and a change always has someone missing one place. The earlier documentation both described mechanisms and recorded directions, and carried progress and indexes, so a refactor that changed no direction left whole passages stale; the effort of maintaining that text was out of proportion to the help it gave.
 
-## 决定
+## Decision
 
-- 每一类信息只放在一处。机制、执行顺序、路径与数值属于代码与注释；全局结构与跨模块不变量属于一份架构概览；方向性选择属于一次性 ADR；面向用户的行为属于用户文档；命令与红线属于工作规则文件。
-- 判断一段文字归属的测试是：一次不改变方向的重构会不会让它过期。会过期的文字留在代码旁边，只有重构推不翻的方向才写成 ADR。
-- ADR 只记录当时选了什么方向、为什么、放弃了什么。写下之后不再随代码修改。
-- 方向被推翻时另写一条 ADR，在新的一条上写明它取代了哪些编号；被取代的文件删除，编号作废，不复用。
-- ADR 不写「现状」字段。实施进度属于提交与议题，读者从代码与提交历史里读它。
-- 一次性的动作与演变过程留在提交说明与变更记录里，不写成 ADR。
-- 一个方向的理由无法从代码与测试读出来时，它才够格成为一条 ADR；能由工具强制的规则写进检查，ADR 里只留理由。
+- Each kind of information lives in one place. Mechanisms, execution order, paths and numbers belong to code and comments; global structure and cross-module invariants to an architecture overview; directional choices to one-time ADRs; user-facing behaviour to user documentation; commands and red lines to the working rules file.
+- The test for where a piece of text belongs is: would a refactor that changes no direction make it stale? Text that would go stale stays beside the code; only a direction a refactor cannot overturn becomes an ADR.
+- An ADR records only what direction was chosen at the time, why, and what was given up. Once written, it is not changed with the code.
+- When a direction is overturned, write another ADR and name on the new one which numbers it replaces; the replaced file is deleted, its number retired and never reused.
+- An ADR carries no "current status" field. Implementation progress belongs to commits and issues, and the reader learns it from the code and the commit history.
+- One-time actions and the course of evolution stay in commit messages and the changelog, not in an ADR.
+- Only when a direction's reasoning cannot be read from the code and the tests does it qualify as an ADR; a rule a tool can enforce goes into a check, and only the reasoning stays in the ADR.
 
-## 后果
+## Consequences
 
-- 想了解某个机制的人要读代码，文档不再替他复述。
-- 被取代的 ADR 已经删除，读者在旧提交或代码注释里遇到作废编号时，要顺着取代它的那一条读现在有效的方向。
-- 放弃的是「一份文档描述全部现状」与「在决策里记录进度」这两种做法；换来的是任何一段文字都能从它的归属判断该不该跟着改动。
+- Anyone who wants to understand a mechanism has to read the code; the documentation no longer retells it.
+- A replaced ADR has been deleted, so a reader who meets a retired number in an old commit or a code comment has to follow the decision that replaced it to the direction in force.
+- Given up: "one document describing the whole current state" and "recording progress inside decisions"; gained: any piece of text's ownership tells you whether it should change with a change.
 
-## 重审条件
+## Reconsider when
 
-- 无。
+- None.

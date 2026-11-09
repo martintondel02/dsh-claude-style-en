@@ -58,10 +58,10 @@ function mobileHomeScenario() {
       const left = (phone.left ?? 0) - (phone.stackLeft ?? 0)
       const right = (phone.stackRight ?? 0) - (phone.right ?? 0)
       return [
-        check('手机首页的面板左右余量相等', Math.abs(left - right) <= 1, `left=${left}px right=${right}px`),
-        check('热力格留在面板内且页面没有横向滚动', phone.heatLeft !== null && phone.heatLeft >= phone.left && phone.heatRight <= phone.right && phone.overflow === false, JSON.stringify(phone)),
-        check('宽屏下面板继续与输入卡左缘对齐', Math.abs((desktop.left ?? 0) - (desktop.cardLeft ?? 0)) <= 1, JSON.stringify(desktop)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the phone home panel keeps equal margins at its sides', Math.abs(left - right) <= 1, `left=${left}px right=${right}px`),
+        check('the heat cells stay inside the panel and the page does not scroll sideways', phone.heatLeft !== null && phone.heatLeft >= phone.left && phone.heatRight <= phone.right && phone.overflow === false, JSON.stringify(phone)),
+        check('on a wide screen the panel still lines up with the composer card left edge', Math.abs((desktop.left ?? 0) - (desktop.cardLeft ?? 0)) <= 1, JSON.stringify(desktop)),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

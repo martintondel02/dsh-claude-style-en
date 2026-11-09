@@ -52,7 +52,7 @@
  *        --full walks the whole smoke and every behaviour spec, and --e2e and
  *        --scenario add the end-to-end lane.
  *        --no-e2e leaves the lane out of either. A request for the whole smoke
- *        and the lane's default table together prints `请确认你正处于发布流程。`
+ *        and the lane's default table together prints `confirm you are in the release process`
  *        before its gates start: that pair is the cloud's release gate.
  *        --help prints this block and stops.
  */
@@ -516,7 +516,7 @@ async function main() {
   }
   // A verdict already filed answers in a moment and says nothing; a run that is
   // about to spend the release gate's minutes asks before it starts.
-  if (walksEverything(request)) say('verify: warning — 请确认你正处于发布流程。')
+  if (walksEverything(request)) say('verify: warning — confirm you are in the release process.')
   const release = await takeLock('verify', key.slice(0, 12))
   holding = release
   // The gates run under this lock: they must not ask for it again.

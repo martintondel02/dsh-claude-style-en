@@ -42,7 +42,7 @@ function messageActionsScenario({ check }) {
       const ROW = '[data-chat-flow-kind="user"]'
       const LINE = `${ROW} [data-clock]`
       const EDITOR = `${ROW} textarea`
-      // 宿主那一行里三个按钮按顺序排：时间之后是复制，然后是皮肤的两个。
+      // The host row holds three buttons in order: the time, then copy, then the skin's two.
       const buttons = page.locator(`${LINE} button`)
       const copyButton = buttons.nth(0)
       const retractButton = buttons.nth(1)
@@ -106,16 +106,18 @@ function messageActionsScenario({ check }) {
       await page.waitForFunction((before) => document.querySelector('[data-conversation-session]')?.getAttribute('data-conversation-session') !== before, resting.sessionId, { timeout: 30000 }).catch(() => {})
       await page.waitForFunction(() => (document.querySelector('[data-composer-input]')?.innerText ?? '').trim() === 'hello there', { timeout: 30000 }).catch(() => {})
       const rewound = await read()
-      // 放回输入框的原文再发一次，再点编辑改过之后按 Enter：改过的文字在新会话里直接发出。
+      // Send the original text the composer got back, then edit it and press Enter: the
+      // changed text goes straight into the new conversation.
       await page.evaluate((selector) => document.querySelector(selector)?.focus(), '[data-composer-input]')
       await page.keyboard.press('Enter')
-      // 分岔出来的会话自己带着一个合成的收尾行，所以这里等的是新消息那一轮的收尾
-      // （下一轮），而不是「有收尾行就算结束」。
+      // The forked conversation carries a synthetic tail row of its own, so this waits for
+      // the tail of the new message's turn (the next turn), not for any tail row to say
+      // the turn is over.
       await page.waitForSelector('[data-chat-turn="2"][data-chat-flow-kind="turn-tail"]', { timeout: 90000 })
       await page.hover(ROW)
       await editButton.click()
       await page.waitForSelector(EDITOR, { timeout: 5000 })
-      // 文字清空时没有可发的消息：保存按钮先站起来。
+      // With the text cleared there is nothing to send: the save button stands disabled.
       await page.fill(EDITOR, '')
       const emptySaveOff = await page.isDisabled(`${EDITOR} ~ div > button:last-child`)
       await page.fill(EDITOR, 'hello there, edited')
@@ -128,19 +130,19 @@ function messageActionsScenario({ check }) {
       await page.waitForFunction(() => (document.querySelector('[data-composer-input]')?.innerText ?? '').trim() === '', { timeout: 10000 }).catch(() => {})
       const committed = await read()
       return [
-        check('回答行提供重跑与删除此轮', answerButtons.rerun === 1 && answerButtons.delete === 1, `${JSON.stringify(answerButtons)} rows=${JSON.stringify(answerState)} clocks=${JSON.stringify(clockState)}`),
-        check('控件行末尾长出撤回与编辑两个按钮', resting.buttons === 3, `${resting.buttons} 个按钮（宿主的时间与复制之外）`),
-        check('控件行在指针离开时隐去、落上去显现', resting.opacity === '0' && hovered.opacity === '1', `resting=${resting.opacity} hovered=${hovered.opacity}`),
-        check('撤回按钮的提示是宿主那份 Tooltip', ourTip !== null && ourTip.text === retractLabel && hostTip !== null && ourTip.background === hostTip.background && ourTip.color === hostTip.color && ourTip.radius === hostTip.radius && ourTip.size === hostTip.size, `ours=${JSON.stringify(ourTip)} host=${JSON.stringify(hostTip)}`),
-        check('首页统计数值的提示也是宿主那份 Tooltip', notes.homeTip !== null && notes.homeTitle === null && notes.homeTip.text === notes.homeText && hostTip !== null && notes.homeTip.background === hostTip.background && notes.homeTip.radius === hostTip.radius, `title=${notes.homeTitle} home=${JSON.stringify(notes.homeTip)} host=${JSON.stringify(hostTip)}`),
-        check('编辑框打开时带着那条消息的原文', edited.trim() === 'hello there', edited.slice(0, 80)),
-        check('编辑期间原来的气泡让位', whileEditing.bubbleShown === false, `bubbleShown=${whileEditing.bubbleShown}`),
-        check('编辑框按 Esc 收起，气泡回来', cancelled.bubbleShown === true && cancelled.bubbleText.includes('hello there'), `bubbleShown=${cancelled.bubbleShown} bubble=${cancelled.bubbleText.slice(0, 60)}`),
-        check('撤回后打开新会话', rewound.sessionId !== resting.sessionId && rewound.sessionId !== null, `before=${resting.sessionId} after=${rewound.sessionId}`),
-        check('原文回到新会话的输入框', rewound.draft === 'hello there', rewound.draft.slice(0, 80)),
-        check('文字清空时保存按钮不可按', emptySaveOff === true, `disabled=${emptySaveOff}`),
-        check('编辑保存后改过的文字在新会话里直接发出', committed.sessionId !== rewound.sessionId && committed.bubbleText === 'hello there, edited' && committed.draft === '', `session=${committed.sessionId} draft=${committed.draft.slice(0, 40)} bubble=${committed.bubbleText.slice(0, 60)}`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the answer row offers rerun and delete for this turn', answerButtons.rerun === 1 && answerButtons.delete === 1, `${JSON.stringify(answerButtons)} rows=${JSON.stringify(answerState)} clocks=${JSON.stringify(clockState)}`),
+        check('two buttons, retract and edit, grow at the end of the control row', resting.buttons === 3, `${resting.buttons} buttons (beside the host's time and copy)`),
+        check('the control row hides when the pointer leaves and shows when it lands', resting.opacity === '0' && hovered.opacity === '1', `resting=${resting.opacity} hovered=${hovered.opacity}`),
+        check('the retract button\'s tooltip is the host\'s own Tooltip', ourTip !== null && ourTip.text === retractLabel && hostTip !== null && ourTip.background === hostTip.background && ourTip.color === hostTip.color && ourTip.radius === hostTip.radius && ourTip.size === hostTip.size, `ours=${JSON.stringify(ourTip)} host=${JSON.stringify(hostTip)}`),
+        check('the home statistics value\'s tooltip is the host\'s own Tooltip too', notes.homeTip !== null && notes.homeTitle === null && notes.homeTip.text === notes.homeText && hostTip !== null && notes.homeTip.background === hostTip.background && notes.homeTip.radius === hostTip.radius, `title=${notes.homeTitle} home=${JSON.stringify(notes.homeTip)} host=${JSON.stringify(hostTip)}`),
+        check('the editor opens with that message\'s original text', edited.trim() === 'hello there', edited.slice(0, 80)),
+        check('while editing, the original bubble gives way', whileEditing.bubbleShown === false, `bubbleShown=${whileEditing.bubbleShown}`),
+        check('Esc puts the editor away and the bubble returns', cancelled.bubbleShown === true && cancelled.bubbleText.includes('hello there'), `bubbleShown=${cancelled.bubbleShown} bubble=${cancelled.bubbleText.slice(0, 60)}`),
+        check('retracting opens a new conversation', rewound.sessionId !== resting.sessionId && rewound.sessionId !== null, `before=${resting.sessionId} after=${rewound.sessionId}`),
+        check('the original text returns to the new conversation\'s composer', rewound.draft === 'hello there', rewound.draft.slice(0, 80)),
+        check('with the text cleared the save button cannot be pressed', emptySaveOff === true, `disabled=${emptySaveOff}`),
+        check('edit and save send the changed text straight into the new conversation', committed.sessionId !== rewound.sessionId && committed.bubbleText === 'hello there, edited' && committed.draft === '', `session=${committed.sessionId} draft=${committed.draft.slice(0, 40)} bubble=${committed.bubbleText.slice(0, 60)}`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

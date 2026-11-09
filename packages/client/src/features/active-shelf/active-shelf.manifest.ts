@@ -4,7 +4,7 @@ export default {
   id: 'activeShelf',
   order: 264,
   contracts: ['session.row-key'],
-  ungated: '侧栏「工作区」标题行右端多一个铃铛，按下去是此刻正在运行的会话列表：列表本身用的还是宿主自己的会话数据，页面上没有它的时候铃铛只显示一个数',
+  ungated: 'A bell at the right end of the sidebar\'s "Workspace" heading row opens the list of sessions running at this moment: the list itself still uses the host\'s own session data, and when there are none on the page the bell shows only a count',
   stylesheets: [{ file: 'active-shelf.css', rank: 132 }],
   cases: [],
 } satisfies FeatureManifest

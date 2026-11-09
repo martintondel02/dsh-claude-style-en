@@ -1,4 +1,4 @@
-# Style Guide · 设计令牌
+# Style Guide
 
 Design tokens for `dsh-claude-style`, recreating the Claude Code Desktop aesthetic.
 
@@ -30,7 +30,7 @@ seeds, its sidebar, its bubble and its traits.
 The reader authors a card of their own: four colours, shown and edited in the
 settings page beside the two brands. Every card can be picked; a brand card
 paints its own colours whatever the brand mark is, and a picked card offers
-「恢复跟随品牌」 to hand the colours back to the theme style's brand. The
+"Follow the brand again" to hand the colours back to the theme style's brand. The
 reader's palette is the same ladder written as relative colours, one block per
 brand and scheme, so the colours resolve in the page while the brand cards keep
 their literals; the image-colour choice (`Default`, `Accent`, `Text colour`)
@@ -192,7 +192,7 @@ card leaves unset.
 | `--dsh-claude-meter-valley` | literal | `#3d7550` | `#8cbf96` | `#3d7550` | `#8cbf96` | `var(--dsw-alias-state-success-primary)` | the off-peak rate badge, and the dated promotions priced below it |
 <!-- /generated:tokens -->
 
-## Two palettes · 两套配色归属
+## Two palettes
 
 The Colours and Typefaces rows each choose who paints: **Claude** (the default)
 or **Follow the host**. Every rule that writes a host token carries the Claude
@@ -249,7 +249,7 @@ keeps its rung and lets the plate answer the pointer. Each text is as wide as th
 words it shows, so a level's name changing width moves the box's left end and
 nothing else.
 
-## Windows titlebar · 桌面顶栏
+## Windows titlebar
 
 On the Windows desktop the caption row has no colour of its own: the sidebar and
 the conversation run to the window's top edge, each in its own fill, and the
@@ -260,7 +260,7 @@ page itself: no block of their own behind them, and they dim with a modal's mask
 like everything else. Their hover plate is the system's, a tint of the button
 glyph's colour.
 
-## Right sidebar · 右侧栏
+## Right sidebar
 
 A panel docked in the right column keeps the host's own fill: it stands flush
 with the column on every side, the host's own border between the column and the
@@ -518,7 +518,7 @@ tightens the code's own line box so the wash sits on the text, stopping short of
 the value that starts clipping descenders. The fill, hairline, radius and size
 stay the host's.
 
-## Popovers · 多选一弹层
+## Popovers
 
 Every single-choice popover in the skin — the permission menu, the model picker,
 the account drawer, and the host's own menu primitive under the hero row's
@@ -580,7 +580,7 @@ account row — the plugin's words, mark, progress and press — so a reader rea
 for an update does not have to open the menu first. The rail has no room beside
 the icon and folds the copy away.
 
-## Context popover · 上下文弹层
+## Context popover
 
 The context meter's popover is the host's own panel: the skin opens it by
 pressing the host's trigger (hover, under the "open popovers on hover"
@@ -667,7 +667,7 @@ viewport leaves no room above — and hands the position to
 `features/hero-menu/hero-menu.css` through custom properties, which the sheet
 reads over the host's inline value.
 
-## Context meter · 上下文计量
+## Context meter
 
 **The trigger is a pie.** Where the host draws a ring of two circles, the meter
 draws two sectors on one centre: the share taken in the colour its occupancy fell
@@ -695,7 +695,7 @@ after it wear the band; the words before them keep the line's tone. A card too
 narrow drops figures in a fixed order, and the widest step folds each token
 figure into k / M / B.
 
-## Search · 搜索
+## Search
 
 **Sidebar box.** The box takes the brand's place in the logo row while the
 pointer is over the sidebar: a short field the height of the row, a hairline on
@@ -726,7 +726,7 @@ plate and shows the Enter glyph; the others hide it. The card fades in and settl
 from above at less than full scale; on close card and mask fade out together
 before the modal unmounts.
 
-## Chat / Code switch · 聊天 / 代码切换
+## Chat / Code switch
 
 With ds-bot installed, the switch is two options on a padded plate, each carrying
 its glyph in the stroke the sidebar's glyphs use. It is painted on both sides of
@@ -740,7 +740,7 @@ controls at the row's left end; on the web it is a cell of the sidebar's first
 row, before the collapse toggle. It moves nothing: there is no transition, since
 the press hands the whole page to the other side.
 
-## The waiting line · 模型正在做什么的那一行
+## The waiting line
 
 The host's running row, its divider and its live region stay as the host draws
 them. Its whale tail is DeepSeek's own character, so under the Claude brand the
@@ -788,7 +788,7 @@ otherwise show below the line. The pin stands only while the host reports the
 tail (or the stream glide holds the position) and steps aside for the reader's
 own scrolling.
 
-## Process rows · 过程行
+## Process rows
 
 An open process group lays its rows out one of two ways, whichever the Main
 window tab's Process rows card holds. Flat is the host's own list, an icon
@@ -804,12 +804,12 @@ opened thought scrolls with the group and holds no scrollbar of its own. A
 trailing thought adds 6px below its line or details, leaving room above the
 card's bottom edge. A thought reads as the thought itself and a generic call as
 its tool and purpose, the kind word and its separator set aside; a named call
-keeps its verb (查找文件 · \*.md), and a row with no description keeps its title.
+keeps its verb (Find files · \*.md), and a row with no description keeps its title.
 The header with its counted line stays above the card, outside it. The Main
 window tab's two cards draw a small group in each layout with these same
 rules (`features/process-column/process-column.css`).
 
-## Home layouts · 首页版面
+## Home layouts
 
 The new-conversation page has two arrangements. `homeLayout` (settings: Home
 layout) writes `data-dsh-claude-home-layout` onto `<body>` and
@@ -921,7 +921,7 @@ stand-in rows — and the heat grid's empty cell **is** the zero step, so "no da
 and "a day with no usage" stay different things: a missing value draws a
 placeholder, a zero day draws the grid's own base tone.
 
-## The composer crab · 输入卡片上的螃蟹
+## The composer crab
 
 Claude Code's pixel crab is the mascot under the Claude brand (or when picked in
 the Mascot row). It stands where Deepy does — the composer card's top edge on
@@ -947,7 +947,7 @@ Only the resting crab takes the pointer. With the animation choice resolved to
 "reduced" each state holds its still frame; a click or a pull still plays its
 reaction.
 
-## Deepy · 小鲸鱼
+## Deepy
 
 Under the DeepSeek brand (or when picked in the Mascot row) the mascot is Deepy,
 the pixel whale of the Deepy theme pack. Its sheets, crop boxes and still frames
@@ -968,7 +968,7 @@ would drop rows on a downscale. Only the resting body takes the pointer. With th
 animation choice resolved to "reduced" each state holds its still frame; a click
 or a pull still plays its reaction.
 
-## Whalegirl · 鲸娘
+## Whalegirl
 
 Picked in the Mascot row, the third character is Whalegirl, the pixel whale girl
 of the emoji set that came with issue #224. Her sheets, crop boxes, still frames

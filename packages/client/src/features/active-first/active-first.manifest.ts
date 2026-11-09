@@ -4,7 +4,7 @@ export default {
   id: 'activeFirst',
   order: 262,
   contracts: ['session.row-key', 'session.row', 'session.phase', 'session.ongoing-state', 'session.ongoing'],
-  ungated: '正在运行的会话排在它所在那一列的开头，行本身还是宿主画的那些行，只是顺序跟着状态走；读者看到哪几个会话在跑，顺序就跟着变，不必再设一个开关',
+  ungated: 'Running sessions stand at the head of the column they belong to; the rows themselves are still the ones the host draws, only their order follows the state. Whichever sessions the reader sees running, the order follows — no switch is needed',
   stylesheets: [],
   cases: [],
 } satisfies FeatureManifest

@@ -1,26 +1,26 @@
-# D5. 模型文案是数据
+# D5. Model copy is data
 
-## 背景
+## Background
 
-模型目录变化很快：厂商频繁新增、改名与退场，同一代里还会插入新的档位。写给某个具体版本的描述，过一阵会挂到另一个版本上；按模型标识逐条登记文案，目录改一个拼写、加一个日期后缀或换一个售卖方都要补一行。更新文案不该要求改代码再发一次版本。
+The model catalog changes quickly: vendors add, rename and retire models frequently, and new tiers appear within the same generation. A description written for one particular version ends up attached to another before long; registering copy entry by entry under a model id means every changed spelling, added date suffix or changed seller needs another line. Updating copy should not require a code change and another release.
 
-## 决定
+## Decision
 
-- 模型文案是数据：一份文档在构建时按格式约束校验后随产物复制出去，浏览器第一次绘制选择器时经宿主通道读取；扩充文案表不改代码。
-- 文档里没有按模型标识登记的条目：标识到句子的映射只有一张有序的模式规则表，别名与拼写变体由规则本身容忍。
-- 查找按家族规则、档位规则、目录自带文本依次回落。
-- 文案属于产品线，不属于某个版本：同一产品线按名字模式映射到同一句话，版本迭代与退场都改不动这条规则。
-- 需要写版本数字或最高级的文案，模式锚定到那个版本，同一条产品线在它下面另有一条通用规则兜底。
-- 不写自造的档位前缀，不重复行里已有的模型名。
-- 家族规则有先后，且必须限定作用范围，一种产品线的规则不认领另一种产品线的模型。
-- 同一文档把模型绑定到厂商组合标；没有规则认领的模型不画组合标。
+- Model copy is data: a document is validated against its format constraints at build time, copied out with the artifact, and read through a host channel when the browser first paints the picker; extending the copy table changes no code.
+- The document has no entries registered by model id: the mapping from ids to sentences is only one ordered table of pattern rules, and aliases and spelling variants are tolerated by the rules themselves.
+- Lookup falls back in order: family rules, tier rules, the catalog's own text.
+- Copy belongs to a product line, not to a version: one product line maps to one sentence by name pattern, and neither a version bump nor a retirement can move that rule.
+- Where copy needs a version number or a superlative, the pattern anchors to that version, and a general rule for the same product line sits beneath it as the fallback.
+- Never write invented tier prefixes, and never repeat the model name the row already carries.
+- Family rules are ordered and must be scoped: one product line's rule does not claim another product line's models.
+- One document binds models to vendor lockups; a model no rule claims draws no lockup.
 
-## 后果
+## Consequences
 
-- 第一次绘制选择器多一次异步读取，文案规则有学习成本。
-- 放弃的方案：把文案写成代码里的常量；按模型标识逐条登记；让文案跟着版本号走。
-- 换来的是目录变化时只改数据，不改逻辑，也不必重新发版。
+- The first painting of the picker costs one asynchronous read, and the copy rules take some learning.
+- Abandoned: writing the copy as constants in code; registering it entry by entry under model ids; making the copy follow the version number.
+- What it buys: a change in the catalog edits data, not logic, and needs no new release.
 
-## 重审条件
+## Reconsider when
 
-- 宿主的模型目录接口直接提供本地化文案时，改接宿主的。
+- The host's model catalog interface provides localized copy directly: read the host's.

@@ -1,29 +1,29 @@
-# D84. 正式回答的第一行是阅读位置的起点
+# D84. The first line of the answer is where reading starts
 
-## 背景
+## Background
 
-长回答在手机上尤其难读：一屏内容少，跟随时读者只能看到最后一行，想从第一行读起要自己往回拖。思考与工具调用阶段又是另一种读法——那些过程在结尾处持续长出来，跟着末尾才对。两者是相反的读法，而宿主的跟随在整轮里只有一种：始终钉住末尾。
+A long answer is hard to read, especially on a phone: a screen holds little, and while following, the reader sees only the last line, so starting from the first means dragging back. The thinking and tool-call phase is read another way — those steps keep growing at the end, and following the end is right. The two are opposite readings, yet the host's follow has only one mode for the whole turn: pin the end throughout.
 
-上游的反馈（#230）描述的做法是：过程阶段照常跟随，正式回答一开始，把答案的第一行带到屏幕顶部，然后停在那里，正文在下面继续长。读者从第一行开始读，不必追着末尾跑。
+The practice described in upstream feedback (#230): follow as usual through the process phase, and as soon as the answer proper begins, bring the answer's first line to the top of the screen and stop there while the body keeps growing below. The reader reads from the first line instead of chasing the end.
 
-## 决定
+## Decision
 
-- 只有读者正读末尾时皮肤才接手；离开末尾的读者在读他选的地方，不能被他没要求的时刻移动。
-- 接手的时刻是答案那一行里 Markdown 层的流式标记（`data-streaming`）出现：答案行是助手步的回复部分（`CHAT_ANSWER_ROW_SELECTOR`），也就是不是思考的那一行。0.2.2-rc.1 在这一轮结束之前把它的每一行都算进过程组，回答行自己也带着过程成员的标记，因此按「过程不持有的那一行」在流式期间永远认不出来，只能按行自己的部分认。恢复出来的历史没有这个标记，已经结束的回答也不再有，因此重新打开会话不会被带偏。
-- 移动的目标是答案行的顶部与滚动容器顶部之间的差；写入走滚动主人的跳转来源，写入之后立刻取持有（D40），并继续盯住这一行的高度。答案刚开始输出时这一行还敌不过一屏，差值超出可滚动的范围，浏览器把写入收到末尾，读者照旧跟着末尾长；此后行每长高一次，都按同一个目标再写一次，行高越过一屏时写入真正落在第一行上，读者停在答案开头，后文落在屏幕下方。持有让跟随来源与流式位移都让开（D85），宿主自己的跟随在它的采样窗口里随之关掉。
-- 一条回答只接手一次；读者自己移动之后停止这次重写，之后滚回末尾时持有照常解除，跟随交还（D40 的结算）。
-- 默认关闭，设置页的会话分组里有它自己的开关。它移动的是读者没有主动要求的时刻，默认打开等于替所有人做这个决定。
+- The skin takes over only while the reader is reading the end; a reader who has left the end is reading where they chose, and must not be moved at a moment they did not ask for.
+- The moment to take over is when the Markdown layer's streaming marker (`data-streaming`) appears in the answer's row: the answer row is the reply part of the assistant step (`CHAT_ANSWER_ROW_SELECTOR`), the row that is not thinking. In 0.2.2-rc.1 the host counts every row of the turn into the process group until the turn ends, and the answer row itself carries the process member's marker, so "the row the process does not hold" can never be recognized during streaming; only the row's own part can be. Restored history has no such marker, and a finished answer no longer has one either, so reopening a conversation is not misled.
+- The target of the move is the difference between the answer row's top and the top of the scroll container; the write goes through the scroll owner's jump source, and ownership is taken immediately after the write (D40), while the row's height keeps being watched. When the answer has just begun it is still less than a screen tall, the difference exceeds the scrollable range, the browser clamps the write to the end, and the reader keeps following the end as before; from then on, each time the row grows, the same target is written again, and once the row is taller than a screen the write really lands on the first line, the reader stops at the start of the answer, and the following text lands below the screen. Ownership makes the follow source and the stream displacement both stand aside (D85), and the host's own follow switches off within its sampling window.
+- The skin takes over once per answer; once the reader moves, the rewrite stops, and when the reader scrolls back to the end the ownership is released as usual and following is handed back (D40's settlement).
+- Off by default, with its own switch in the settings page's conversation group. It moves the reader at a moment they did not ask for, and on by default would decide that for everyone.
 
-## 后果
+## Consequences
 
-- 接手之后读者停在答案开头，流式输出在他的下方继续长；进入持有期间宿主仍会把末尾钉上来，那一段增长写回读者的位置（D85）。
-- 短于一屏的回答没有可滚动的余地：第一行到不了顶部，读者看到的仍是跟着末尾长，这是页面本身的限制，不是接手没有发生。
-- dsh-chat-ux 在同一时刻对同一件事动手，两者互斥（manifest 的 `yieldsTo`）；它在页面上时这个功能不安装。
-- 放弃的方案：默认开启。读者没要它时页面自己跳，会被当作意外。
-- 放弃的方案：按宿主早先的 `data-turn-process-answer` 标记触发。宿主在 0.2.1-rc.5 之后不再写这个标记，读它等于在新时代什么都不做。
-- 放弃的方案：按答案行「从无到有」触发。答案行可能随那一轮一起挂上而内容为空，这会把读者带到一条还没开始的答案上。
+- After the takeover the reader stops at the start of the answer while the streamed output keeps growing below; during ownership the host still pins the end, and that stretch of growth is written back to the reader's position (D85).
+- An answer shorter than a screen has no scrollable room: the first line cannot reach the top, and the reader still sees the end grow, which is a limit of the page itself, not the takeover failing.
+- dsh-chat-ux acts on the same thing at the same moment, and the two exclude each other (the manifest's `yieldsTo`); the feature is not installed while it is on the page.
+- Abandoned: on by default. A page that jumps on its own when the reader did not ask for it is taken as an accident.
+- Abandoned: triggering on the host's earlier `data-turn-process-answer` marker. The host stopped writing that marker after 0.2.1-rc.5, so reading it means doing nothing in the new era.
+- Abandoned: triggering on the answer row appearing from nothing. The answer row can mount with the turn while its content is empty, which would take the reader to an answer that has not begun.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供「正式开始回答」的语义事件或可等待的渲染阶段时，这里的判定改读那个事件。
-- 宿主开放可替换的跟随策略时，接手收回宿主，这里只保留开关与判定（D40 的重审条件）。
+- When the host provides a semantic event for "the answer proper has begun", or an awaitable render phase, this decision reads that event.
+- When the host opens a replaceable follow strategy, the takeover returns to the host and only the switch and the decision stay here (D40's reconsideration).

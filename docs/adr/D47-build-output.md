@@ -1,26 +1,26 @@
-# D47. 构建产物不进主分支
+# D47. Build output does not enter the main branch
 
-## 背景
+## Background
 
-构建产物被版本管理跟踪，只在发版时更新，既不算源码，也不保证与源码一致，平时只以改动的文件出现在工作区里。使用者从代码仓库安装插件时，带构建脚本的包要求他先批准构建、再取得开发依赖。
+The build output was tracked by version control, updated only at release time, counted as neither source nor guaranteed to match the source, and ordinarily appeared in the working tree only as changed files. When a user installed the plugin from the code repository, the package with build scripts required them to approve a build and then fetch the dev dependencies.
 
-## 决定
+## Decision
 
-- 主分支不保存构建产物，产物由持续集成在需要时构建。
-- 发版由持续集成完成：构建一次，上架的内容与通过验证的那份产物是同一份。
-- 同一次发版把与上架内容相同的文件写到一个只由持续集成写入的发布分支，并把版本标签移到那次提交上，使按标签安装与按包管理器安装拿到同一份产物。
-- 写发布分支的那一步自己先构建；干净检出里没有产物，只执行打包会写出指向缺失文件的包。
-- 发布前核对标签与包声明的版本一致，不一致即失败；重跑从上次停下的地方继续，已经上架的版本不再上架，已经写好的分支不再重写。
-- 发布分两段：先用同一次打包的结果发一个预发布版本，全部闸门通过之后再发正式版本并设为默认标签。
-- 上架走一次性凭据与来源证明，仓库不保存发布令牌。
-- 上架之后以该版本的变更记录为正文建立或更新发布说明。
+- The main branch does not keep the build output; continuous integration builds it when needed.
+- A release is performed by continuous integration: build once, and what is published is the same artifact that passed verification.
+- The same release writes the files identical to what is published to a release branch written only by continuous integration, and moves the version tag onto that commit, so installing by tag and installing from the package manager get the same artifact.
+- The step that writes the release branch builds first itself; a clean checkout has no artifact, and packing alone would write a package pointing at missing files.
+- Before publishing, check that the tag matches the version the package declares and fail if it does not; a rerun continues from where it stopped, a version already published is not published again, and a branch already written is not rewritten.
+- A release runs in two stages: publish a prerelease from the same pack, then, once every gate has passed, publish the final version and set it as the default tag.
+- Publishing uses one-time credentials and provenance; the repository stores no release token.
+- After publishing, create or update the release notes with that version's changelog section as the body.
 
-## 后果
+## Consequences
 
-- 无法再从主分支的某个提交直接拿到可用的产物，必须构建，或从包管理器与发布分支安装。
-- 发版流程多出推送分支与凭据申请，持续集成需要仓库的写权限。
-- 预发布版本留在包管理器上，不随正式版本撤回。
+- A usable artifact can no longer be taken directly from any commit on the main branch; it must be built, or installed from the package manager or the release branch.
+- The release flow gains pushing a branch and requesting credentials, and continuous integration needs write access to the repository.
+- The prerelease stays in the package manager and is not withdrawn with the final version.
 
-## 重审条件
+## Reconsider when
 
-- 宿主能在安装代码仓库里的插件时自动执行构建，或插件市场只从包管理器安装时，删除发布分支。
+- The host can run the build automatically when installing a plugin from a code repository, or the plugin marketplace installs only from the package manager: delete the release branch.

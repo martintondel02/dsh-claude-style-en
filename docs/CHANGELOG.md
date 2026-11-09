@@ -2,6 +2,18 @@
 
 All notable changes to `dsh-claude-style` are documented here, newest first.
 
+## [0.20.2] - 2026-11-09
+
+[中文](#cn-0.20.2) | [English](#en-0.20.2)
+
+<h3 id="cn-0.20.2">其他变更</h3>
+
+- 把仓库改为英文优先，README、架构记录、设计指南、源码注释与测试说明都以英文呈现，中文说明保留在 README.zh.md
+
+<h3 id="en-0.20.2">Chores</h3>
+
+- Make the repository English-first, with the README, architecture records, design guide, source comments and test descriptions in English and the Chinese guide in README.zh.md
+
 ## [0.20.1] - 2026-11-08
 
 [中文](#cn-0.20.1) | [English](#en-0.20.1)

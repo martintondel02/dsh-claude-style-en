@@ -58,7 +58,7 @@ function decisionNumbers() {
     if (!/^D\d+-.*\.md$/.test(name)) continue
     live.add(Number(name.match(/^D(\d+)/)[1]))
     const text = fs.readFileSync(path.join(DECISIONS, name), 'utf8')
-    const replaced = text.match(/^- \*\*取代\*\*：(.+)$/m)
+    const replaced = text.match(/^- \*\*(?:取代|Replaces)\*\*[:：]\s*(.+)$/m)
     if (replaced !== null) for (const number of replaced[1].matchAll(/D(\d+)/g)) retired.add(Number(number[1]))
   }
   const retiredFile = path.join(DECISIONS, 'retired.txt')
@@ -130,7 +130,7 @@ for (const file of markdown) {
 // 3. Decision numbers cited by code and documents. A retired number stays
 // citable (D48): a comment or an older record points at it and the index leads
 // on to the decision that replaced it. A decision file is where the reader
-// stops, so its own prose names the decision in force — only its 取代 line, and
+// stops, so its own prose names the decision in force — only its Replaces line, and
 // the index generated from those lines, name retired numbers.
 const { live, retired } = decisionNumbers()
 const citing = [
@@ -141,7 +141,7 @@ const citing = [
   path.join(ROOT, 'LICENSE'),
 ].filter((file, at, all) => all.indexOf(file) === at && fs.existsSync(file))
 const DECISION_FILE = /^docs\/adr\/D\d+-.*\.md$/
-const REPLACES_LINE = /^\s*[-*]\s*\*\*取代\*\*：/
+const REPLACES_LINE = /^\s*[-*]\s*\*\*(?:取代|Replaces)\*\*[:：]/
 let citations = 0
 let decisionProse = 0
 for (const file of citing) {
@@ -165,21 +165,29 @@ for (const file of citing) {
   })
 }
 
-// 4. The shape of a decision file (D48): 背景、决定、后果 and 重审条件 in that
-// order, the last one saying when the direction is worth revisiting.
-const SECTIONS = ['## 背景', '## 决定', '## 后果', '## 重审条件']
+// 4. The shape of a decision file (D48): Background, Decision, Consequences and
+// Reconsider when, in that order, the last one saying when the direction is
+// worth revisiting. The Chinese headings an upstream merge may still carry are
+// read as the same four sections.
+const SECTIONS = ['## Background', '## Decision', '## Consequences', '## Reconsider when']
+const LEGACY_SECTIONS = ['## 背景', '## 决定', '## 后果', '## 重审条件']
+/** Normalize an upstream heading to its English spelling so one shape check covers both. */
+function normalizeHeading(heading) {
+  const at = LEGACY_SECTIONS.indexOf(heading)
+  return at === -1 ? heading : SECTIONS[at]
+}
 let decisionFiles = 0
 for (const name of fs.readdirSync(DECISIONS)) {
   if (!/^D\d+-.*\.md$/.test(name)) continue
   decisionFiles += 1
   const lines = fs.readFileSync(path.join(DECISIONS, name), 'utf8').split('\n')
-  const headings = lines.filter((line) => line.startsWith('## '))
+  const headings = lines.filter((line) => line.startsWith('## ')).map(normalizeHeading)
   if (headings.join(' / ') !== SECTIONS.join(' / ')) {
-    problems.push(`docs/adr/${name}: its sections are ${headings.join(' ')}; a decision carries ${SECTIONS.join('、')} in that order (D48)`)
+    problems.push(`docs/adr/${name}: its sections are ${headings.join(' ')}; a decision carries ${SECTIONS.join(', ')} in that order (D48)`)
     continue
   }
-  if (lines.slice(lines.indexOf('## 重审条件') + 1).every((line) => line.trim() === '')) {
-    problems.push(`docs/adr/${name}: 重审条件 says nothing; write the condition, or 「无。」 (D48)`)
+  if (lines.slice(lines.indexOf(lines.find((line) => normalizeHeading(line) === '## Reconsider when')) + 1).every((line) => line.trim() === '')) {
+    problems.push(`docs/adr/${name}: Reconsider when says nothing; write the condition, or "None." (D48)`)
   }
 }
 

@@ -122,24 +122,24 @@ function sidebarPeekScenario({ check }) {
 
       const same = (a, b) => a !== null && b !== null && a.left === b.left && a.width === b.width
       return [
-        check('侧栏已收起',
+        check('the sidebar is collapsed',
           before.collapsed && before.center !== null,
           JSON.stringify(before)),
-        check('鼠标停在收起按钮上，宿主打开侧栏，侧栏以展开宽度浮在页面上方',
+        check('resting the pointer on the collapse toggle lets the host open the sidebar, which floats over the page at its open width',
           opened && !open.collapsed && open.column !== null && open.column.left === 0 && open.column.width >= OPEN_WIDTH_PX,
           JSON.stringify(open)),
-        check('侧栏浮在上方时主区的位置与宽度和收起时一样',
+        check('while the sidebar floats over it, the centre keeps the place and width it has when collapsed',
           same(before.center, open.center),
           JSON.stringify({ before: before.center, open: open.center })),
-        check('鼠标移开后侧栏收起，主区回到原来的盒子',
+        check('leaving the pointer collapses the sidebar, and the centre returns to its box',
           closed && same(before.center, after.center),
           JSON.stringify(after)),
-        check('展开时点击按钮让侧栏固定展开，鼠标移开也不收起，主区让出侧栏的宽度',
+        check('pressing the toggle while open pins the sidebar open, so it stays after the pointer leaves and the centre makes room for its width',
           !pinned.collapsed && pinned.column !== null && pinned.center !== null &&
             pinned.center.left >= pinned.column.width - 1,
           JSON.stringify(pinned)),
-        check('在浮起的侧栏里选中会话后侧栏自动收起', picked, ''),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('picking a session in the floating sidebar collapses it', picked, ''),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

@@ -393,28 +393,28 @@ export default {
     const numbers = (text) => (String(text).match(/-?[\d.]+/g) || []).map(Number)
     const LANE_DOTS = [['is-bounce', 3], ['is-line', 3], ['is-orbit', 4]]
     const OPENINGS = ['dsh-claude-wait-dot', 'dsh-claude-wait-dot-line', 'dsh-claude-wait-dot-orbit-1']
-    // 三条轨道都在页面上、各带自己的球数（3 / 3 / 4），其中一条在用；开哪一条是随机的，
-    // 所以这里只认「用的是三条之一」。
-    check('加载点把三条轨道都建好了——三颗跳球、三颗走路、四颗交换四角——其中一条在用，主机的鲸鱼尾让位',
+    // All three lanes stand on the page, each with its own dot count (3 / 3 / 4), and
+    // one of them runs; which one is random, so this only asks that it is one of the three.
+    check('the loader builds all three lanes — three bouncing dots, three walking, four swapping corners — runs one, and the host whale tail steps aside',
       loader.shown === true && (loader.lanes || []).length === 3 &&
         LANE_DOTS.every(([name, count]) => (laneOf(loader, name).opacity || []).length === count) &&
         LANE_DOTS.some(([name]) => String(loader.motion).includes(name)) &&
         OPENINGS.includes(String(loader.animation)) && loader.background === 'rgb(217, 119, 87)' &&
         loader.shadow === 'none' && working.whaleShown === false,
       JSON.stringify({ loader, whaleShown: working.whaleShown }))
-    // 每条轨道自己的动作：探针把它临时放到「在用」的位置、用它自己的时钟走完一圈，
-    // 所以读的是样式表写下的曲线，与此刻轮到谁无关。
+    // Each lane's own motion: the probe stands it in the running slot for a moment and
+    // walks one cycle on its own clock, so the reading is the stylesheet's curve.
     const bounceFrames = (wait.bounceLane || { frames: [] }).frames || []
     const bounceY = bounceFrames.map((frame) => numbers(frame.translate[0])[1]).filter((one) => Number.isFinite(one))
-    check('跳球那条：一颗球从地面弹起 8px 再落回，三颗各错开一个相位',
+    check('the bouncing lane: a dot leaves the floor by 8px and comes back, and the three stand a phase apart',
       bounceFrames.length >= 40 && bounceFrames[0].animation === 'dsh-claude-wait-dot' &&
         bounceFrames[0].duration === '0.5s' && (bounceFrames[0].delays || []).join(',') === '-0.5s,-0.3s,-0.2s' &&
         Math.min(...bounceY) <= -7.5 && Math.max(...bounceY) >= -0.5,
       JSON.stringify({ readings: bounceFrames.length, low: Math.min(...bounceY), high: Math.max(...bounceY), head: bounceFrames[0] }))
-    // 走路那条：一端走到另一端各占半个周期，所以过半个周期球落在中点另一侧、离中点的距离与
-    // 大小都一样；三颗各错开三分之一个周期（相差半个周期就是把同一个动作镜像过去），
-    // 而且两端最多就是球本来的大小。简谐运动在两端慢、中间快：离中点超过四分之三幅度的
-    // 时间约占一周的 46%，匀速往返只占 25%，读的就是这一项。
+    // The walking lane: each half cycle crosses from one end to the other, so half a
+    // cycle later a dot stands as far past the midpoint, at the same size; the three sit
+    // a third of a cycle apart (half a cycle mirrors the motion), and the ends are no
+    // larger than the dot itself. Harmonic motion lingers at the ends, which this reads.
     const lineFrames = (wait.lineLane || { frames: [] }).frames || []
     const lineY = lineFrames.map((frame) => numbers(frame.translate[0])[1])
     const lineScale = lineFrames.map((frame) => Number(String(frame.scale[0]).split(' ')[0]))
@@ -437,7 +437,7 @@ export default {
     const phases = (lineFrames[0] === undefined ? [] : lineFrames[0].delays || []).map(phaseOf)
     const clash = phases.some((one, at) => phases.some((two, other) => other > at &&
       (Math.abs(one - two) < 0.02 || Math.abs(Math.abs(one - two) - 0.5) < 0.02)))
-    check('走路那条：三颗各沿自己的线走简谐、两端停得比中间久、相位各错三分之一，去程与回程是同一条曲线，最长的一帧也不比跳球大',
+    check('the walking lane: the three travel harmonically on their own lines, linger at the ends longer than in the middle, stand a third of a cycle apart, share one curve out and back, and stay no larger than the bouncing dot',
       lineFrames.length >= 45 && lineFrames[0].animation === 'dsh-claude-wait-dot-line' &&
         lineFrames[0].duration === '1.25s' && phases.length === 3 && !clash &&
         highest - lowest >= 7 && Math.max(...sizes) <= 1.001 && drift <= 0.5 && sizeDrift <= 0.05 && dwell >= 0.38,
@@ -449,9 +449,9 @@ export default {
         sizeDrift: Number(sizeDrift.toFixed(3)),
         dwell: Number(dwell.toFixed(2)),
       }))
-    // 交换四角那条：四颗球站成 45 : 55 的矩形；一圈四个四分之一圈——A 段一对对角换位、
-    // B 段另一对，再各换回来，所以整圈走完每颗球回到原处。每颗球走的是一段椭圆弧：
-    // 弧的中点离「起点到终点那条直线」有明显距离，不是被直线搬过去。
+    // The swapping-corners lane: four dots stand in a 45 : 55 rectangle; a cycle turns
+    // one diagonal pair in segment A and the other in segment B, then back, so every dot
+    // returns where it started. Each travels an elliptical arc, clear of the straight line.
     const orbitFrames = (wait.orbitLane || { frames: [] }).frames || []
     const spot = (frame, dot) => ({ x: numbers(frame.translate[dot])[0], y: numbers(frame.translate[dot])[1] })
     const near = (one, two, allowance) => one !== undefined && two !== undefined &&
@@ -470,36 +470,37 @@ export default {
     })()
     const closes = orbitFrames.length > 60 &&
       [0, 1, 2, 3].every((dot) => near(spot(orbitFrames[60], dot), spot(orbitFrames[0], dot), 0.05))
-    // 每段 400ms 走弧、随后 200ms 停住（= 0.5 倍那段用时），所以「刚走完」与「停顿结束」
-    // 读出来是同一个位置。
+    // Each segment travels its arc for 400ms and then rests for 200ms (0.5 times the
+    // travel), so "just finished" and "rest over" read as the same position.
     const dwells = [[10, 15], [25, 30], [40, 45], [55, 60]].every(([just, later]) =>
       [0, 1, 2, 3].every((dot) => near(spot(orbitFrames[just], dot), spot(orbitFrames[later], dot), 0.05)))
-    check('交换四角那条：四颗球站成 45 : 55 的矩形，一圈里 A 段换一对对角、B 段换另一对、再各换回来，每颗走的是弧、走完停半段',
+    check('the swapping-corners lane: four dots stand in a 45 : 55 rectangle, segment A swaps one diagonal pair and segment B the other and each swaps back, every dot travels an arc and rests half a segment after it',
       orbitFrames.length > 60 && shape.height > 0 && Math.abs(shape.width / shape.height - 45 / 55) <= 0.06 &&
         near(spot(orbitFrames[10], 0), spot(orbitFrames[0], 2), 0.6) && near(spot(orbitFrames[10], 2), spot(orbitFrames[0], 0), 0.6) &&
         near(spot(orbitFrames[10], 1), spot(orbitFrames[0], 1), 0.05) && near(spot(orbitFrames[10], 3), spot(orbitFrames[0], 3), 0.05) &&
         near(spot(orbitFrames[25], 1), spot(orbitFrames[10], 3), 0.6) && near(spot(orbitFrames[25], 3), spot(orbitFrames[10], 1), 0.6) &&
         near(spot(orbitFrames[25], 0), spot(orbitFrames[10], 0), 0.05) && dwells && closes && bow >= 1,
       JSON.stringify({ readings: orbitFrames.length, shape, bow: Number(bow.toFixed(2)), closes, dwells }))
-    // 轮换：一个动作站满 10 秒才换，换的是另一条轨道（不会换到自己）；交接一开始新的那条
-    // 就在场，所以从那一帧算换。
+    // Rotation: a motion holds the slot for ten seconds, then another lane takes it (never
+    // the same one); the new lane is on the page from the hand-over's first frame.
     const rotation = (wait.rotation || []).filter((frame) => frame !== null && frame.loader !== null && frame.loader.motion !== null)
     const seen = rotation.map((frame) => ({ at: frame.at, motion: String(frame.loader.motion), loader: frame.loader }))
     const starts = seen.length === 0 ? [] : [0]
     for (let at = 1; at < seen.length; at += 1) if (seen[at].motion !== seen[at - 1].motion) starts.push(at)
     const motionOf = (at) => (String(seen[at].motion).match(/is-(bounce|line|orbit)/) || [])[1]
     const changes = starts.slice(1)
-    // 换与换之间隔多久：只看相邻两次换之间的那一段，采样起点不算一次变化。
+    // How long one lane holds: only the stretch between two changes is read, and the
+    // sampling start is not a change.
     const gaps = changes.slice(1).map((at, index) => seen[at].at - seen[changes[index]].at)
     const rotated = changes.map((at, index) => motionOf(at) !== motionOf(starts[index]))
-    check('加载点每 10 秒换一条轨道，换的不会是正站着的那一条',
+    check('the loader changes lane every ten seconds and never changes to the one running',
       changes.length >= 2 &&
         gaps.every((one) => one >= bound('loaderRotateGapMinMs') && one <= bound('loaderRotateGapMaxMs')) &&
         rotated.every((one) => one === true),
       JSON.stringify({ changes: changes.length, gaps: gaps.map((one) => Math.round(one)), motions: starts.map((at) => motionOf(at)) }))
-    // 交接读第一次换到第二次换之间的那些帧，从换之前的最后一帧起：旧轨道的每颗球在自己
-    // 静止的那一刻把位置交给新轨道里配对的那颗，新的那颗从原地出发走进自己的轨迹。所以框里
-    // 每一帧都有三到四颗球，每颗刚露面的球都站在上一帧某颗球的位置上，交接完只剩新的那条。
+    // The hand-over reads the frames between the first change and the second, from the
+    // frame before it: each old dot hands its place to its partner in the new lane as it
+    // comes to rest, so every frame carries three or four dots and only the new lane is left.
     const laneShows = (frame, name, test) => {
       const opacity = laneOf(frame.loader, name).opacity || []
       return opacity.length > 0 && opacity.every(test)
@@ -525,7 +526,7 @@ export default {
         })
       })
     }
-    check('换轨道是一次形变：每颗新出现的球都从旧轨道某颗球所在的位置出发，框里每一帧都有三到四颗球，交接完只剩新的那条',
+    check('a lane change is one morph: every dot that appears starts where a dot of the old lane stood, every frame in the box carries three or four dots, and only the new lane is left once the hand-over ends',
       goneLane !== null && comeLane !== null && goneLane !== comeLane && settled !== null && String(settled.motion).includes(comeLane) &&
         counts.length > 0 && counts.every((one) => one >= 3 && one <= 4) && jumps.length === 0,
       JSON.stringify({ gone: goneLane, come: comeLane, settled: settled === null ? null : settled.motion, fewest: Math.min(...counts), most: Math.max(...counts), jumps }))
@@ -617,7 +618,7 @@ export default {
     check('reasoning the line can take words from says the model\'s own clause',
       phrase.word === 'Checking the file is true' && phrase.copies === 1, JSON.stringify(phrase))
     const clauseHeld = wait.clauseHeld || {}
-    check('从句在下一次意图到达之前一直站着，中间不退回等待词',
+    check('the clause stands until the next intent arrives, and the waiting word does not return in between',
       clauseHeld.word === 'Checking the file is true', JSON.stringify(clauseHeld))
     const narrow = wait.narrow || {}
     check('a wording with no room is carried whole and clipped where the row ends, and the clock stays on the row',
@@ -633,7 +634,7 @@ export default {
       reduced.word === 'Checking the row now' && reduced.phase === null && reduced.copies === 1 && reduced.displayed === 'Checking the row now',
       JSON.stringify(reduced))
     const reducedHeld = wait.reducedHeld || {}
-    check('句子不带自己的从句时，站着的那句在该选择下也留在原处',
+    check('a sentence with no clause of its own leaves the standing clause where it is under that choice',
       reducedHeld.word === 'Checking the row now' && reducedHeld.copies === 1, JSON.stringify(reducedHeld))
     // Reduced presses every skin animation to a hundredth of a millisecond but
     // leaves its iteration count alone, so an animation left running strobes
@@ -647,7 +648,7 @@ export default {
       one.loader !== undefined && two.loader !== undefined &&
       one.loader.translate === two.loader.translate && one.loader.scale === two.loader.scale &&
       held(one) && held(two)
-    check('「减弱」时加载点的球停在一个帧上、字上的画法也停住：相隔十分之一秒的两次读数一致',
+    check('under Reduced the loader dots hold on one frame and the paint on the words holds too: two readings a tenth of a second apart agree',
       stillSame(still.first, still.second),
       JSON.stringify({ first: { loader: still.first?.loader, sweep: still.first?.sweep, sweepState: still.first?.sweepState }, second: { loader: still.second?.loader, sweep: still.second?.sweep, sweepState: still.second?.sweepState } }))
     check('words that settle shorter take the box down with them, so the clock sits right after them',
@@ -662,21 +663,21 @@ export default {
     check('switching the chat-area animations off takes the line down and gives the host\'s words back',
       off.line === false && off.marked === false && off.wordsShown === true && off.wordsMarked === false && off.foreignShown === true,
       JSON.stringify(off))
-    // 钉住状态行的是聊天区跟随自己的规则：跟随关掉后宿主自己管位置，这一行留在
-    // 文档里随内容走，再打开又钉回输入框上方。
+    // The chat follow's own rule pins the status line: with follow off the host owns the
+    // position and the row stays in the document; turning it back on pins it again.
     const pin = wait.pin || {}
-    check('状态行的钉住随聊天区跟随的开关：跟随关掉后行留在文档里，再打开又钉回去',
+    check('the status line pins with the chat follow switch: off leaves the row in the document, and on pins it back',
       pin.on?.follow === true && pin.on?.pinned === true &&
         pin.off?.follow === false && pin.off?.pinned === false &&
         pin.back?.follow === true && pin.back?.pinned === true,
       JSON.stringify(pin))
-    check('后排入的用户消息或提问卡让状态行回到文档流，行下遮罩同时退场',
+    check('a user message or question card arriving later returns the status line to the document flow, and the mask below the row leaves with it',
       pin.afterMessage?.pinned === false && pin.afterMessage?.mask === null &&
         pin.afterQuestion?.pinned === false && pin.afterQuestion?.mask === null,
       JSON.stringify(pin))
-    // 钉住的行把脚下的画布一直铺到输入框顶，宿主在行下沿留出的那条缝里
-    // 就不会露出滑动中的正文（chat-wait.css）。
-    check('状态行钉住时行下的画布铺到输入框顶，跟随关掉后这块画布随之退场',
+    // A pinned row carries the canvas under it up to the composer top, so the strip the
+    // host leaves under the row does not show the transcript sliding past (chat-wait.css).
+    check('while the status line is pinned the canvas under it reaches the composer top, and that canvas leaves once follow is off',
       pin.on?.mask?.position === 'absolute' && pin.on.mask.background === pin.on.mask.ink &&
         Number.parseFloat(pin.on.mask.height) >= 17 &&
         pin.off?.mask === null &&

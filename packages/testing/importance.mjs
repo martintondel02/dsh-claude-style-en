@@ -361,27 +361,27 @@ function importanceScenario(lane) {
       const runKeys = new Set(declarations.map(evidenceKey))
       const unknownEvidence = [...recorded].filter((key) => !runKeys.has(key))
       const withOpponents = declarations.filter((item) => (ledgerNow.entries[evidenceKey(item)]?.opponents ?? []).length > 0)
-      const briefKeys = (keys) => keys.slice(0, 3).map((key) => key.replace(/\s+/g, ' ').slice(0, 90)).join('；')
-      const brief = (selectors) => selectors.slice(0, 3).map((selector) => selector.replace(/\s+/g, ' ').slice(0, 90)).join('；')
-      const recordedGroups = UNREACHABLE_FILE.groups.map((group) => `${group.reason} ${group.selectors.length}`).join('，')
+      const briefKeys = (keys) => keys.slice(0, 3).map((key) => key.replace(/\s+/g, ' ').slice(0, 90)).join('; ')
+      const brief = (selectors) => selectors.slice(0, 3).map((selector) => selector.replace(/\s+/g, ' ').slice(0, 90)).join('; ')
+      const recordedGroups = UNREACHABLE_FILE.groups.map((group) => `${group.reason} ${group.selectors.length}`).join(', ')
       const checks = [
-        lane.check('每个页面形态都审过', named.length >= 12, `${named.map((item) => `${item.name}: ${item.removable}/${item.needed}${item.sentBack === 0 ? '' : `/退回 ${item.sentBack}`}`).join('；')}；悬停 ${hovered} 处`),
+        lane.check('every page state was audited', named.length >= 12, `${named.map((item) => `${item.name}: ${item.removable}/${item.needed}${item.sentBack === 0 ? '' : `/sent back ${item.sentBack}`}`).join('; ')}; ${hovered} hover points`),
         // Every `!important` the walk found necessary is written down with what
         // it beats where it was decided (D9). The set of declarations is
         // enforced: a run that needs one the ledger has not recorded, or no
         // longer needs one it records, fails until the ledger is written again
         // and the difference read.
-        lane.check('每处 !important 都在台账里，需要的那些记着对手', unrecordedDeclarations.length === 0 && unknownEvidence.length === 0 && missingEvidence.length === 0,
-          `${declarations.length} 处声明，台账记着 ${recorded.size} 处，其中 ${withOpponents.length} 处认出了对手（${[...new Set(withOpponents.flatMap((item) => (ledgerNow.entries[evidenceKey(item)].opponents ?? []).map((entry) => entry.kind)))].join('、') || '无'}）；本次未记录的 ${unrecordedDeclarations.length} 处（${briefKeys(unrecordedDeclarations.map(evidenceKey))}），台账里多出的 ${unknownEvidence.length} 处（${briefKeys(unknownEvidence)}）`),
-        lane.check('没有多余的 !important', idle.length === 0, `${declarations.length} 处：需要 ${count('needed')}，多余 ${idle.length}${idle.length === 0 ? '' : `（${idle.slice(0, 3).map((item) => `${item.selector.replace(/\s+/g, ' ').slice(0, 70)} { ${item.prop} }`).join('；')}…）`}；另有 ${count('unmatched')} 处从未匹配到元素（本次页面形态未覆盖），${count('declared twice')} 处重复声明，${count('third-party')} 处属于第三方应答，${count('transient state')} 处只在短暂标记下生效，${count('unreadable pseudo-element')} 处伪元素读不到计算值`),
+        lane.check('every !important is in the ledger, and the needed ones name their opponents', unrecordedDeclarations.length === 0 && unknownEvidence.length === 0 && missingEvidence.length === 0,
+          `${declarations.length} declarations; the ledger records ${recorded.size}, and ${withOpponents.length} of them name an opponent (${[...new Set(withOpponents.flatMap((item) => (ledgerNow.entries[evidenceKey(item)].opponents ?? []).map((entry) => entry.kind)))].join(', ') || 'none'}); unrecorded in this run ${unrecordedDeclarations.length} (${briefKeys(unrecordedDeclarations.map(evidenceKey))}), extra in the ledger ${unknownEvidence.length} (${briefKeys(unknownEvidence)})`),
+        lane.check('no !important is superfluous', idle.length === 0, `${declarations.length} declarations: ${count('needed')} needed, ${idle.length} superfluous${idle.length === 0 ? '' : ` (${idle.slice(0, 3).map((item) => `${item.selector.replace(/\s+/g, ' ').slice(0, 70)} { ${item.prop} }`).join('; ')}…)`}; ${count('unmatched')} never matched an element (no page state here covers them), ${count('declared twice')} declared twice, ${count('third-party')} belong to third-party answers, ${count('transient state')} hold only under a momentary mark, ${count('unreadable pseudo-element')} are pseudo-elements whose computed value cannot be read`),
         // The other half of "every line is necessary": a selector no state
         // matches an element with is a rule the page never reads. One the walk
         // cannot reach is recorded with its reason; anything else fails, and so
         // does a recorded selector the page has started matching — the record
         // is a debt, and it is only allowed to shrink.
-        lane.observe('没有从不匹配元素的皮肤选择器', unrecorded.length === 0, `${sweep.total} 个选择器：${sweep.matched} 个在某个页面形态里匹配到元素，${sweep.dead.length} 个从未匹配（登记在册 ${sweep.dead.length - unrecorded.length}${recordedGroups === '' ? '' : `：${recordedGroups}`}${unrecorded.length === 0 ? '' : `；未登记 ${unrecorded.length}：${brief(unrecorded)}…`}）${sweep.unparsed.length === 0 ? '' : `；${sweep.unparsed.length} 个页面解析不了（${sweep.unparsed.slice(0, 2).join('；')}）`}；${Object.entries(sweep.excused).map(([keep, many]) => `${many} 个按契约不扫（${keep}）`).join('，') || '没有按契约豁免的'}`),
-        lane.observe('登记在册的选择器都还匹配不上', reached.length === 0, `登记表里 ${reached.length} 个已经能匹配到元素或规则已删除，该划掉：${brief(reached)}${EITHER.size === 0 ? '' : `；另有 ${EITHER.size} 条记录，抓到与否都算数`}`),
-        lane.check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        lane.observe('no skin selector never matches an element', unrecorded.length === 0, `${sweep.total} selectors: ${sweep.matched} matched an element in some page state, ${sweep.dead.length} never matched (${sweep.dead.length - unrecorded.length} recorded${recordedGroups === '' ? '' : `: ${recordedGroups}`}${unrecorded.length === 0 ? '' : `; unrecorded ${unrecorded.length}: ${brief(unrecorded)}…`})${sweep.unparsed.length === 0 ? '' : `; ${sweep.unparsed.length} the page cannot parse (${sweep.unparsed.slice(0, 2).join('; ')})`}; ${Object.entries(sweep.excused).map(([keep, many]) => `${many} are excused by contract (${keep})`).join(', ') || 'none excused by contract'}`),
+        lane.observe('every recorded selector still matches nothing', reached.length === 0, `${reached.length} in the record now match an element or their rule is gone, and should be struck out: ${brief(reached)}${EITHER.size === 0 ? '' : `; ${EITHER.size} more records count whether caught or not`}`),
+        lane.check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
       // The appearance layer's snapshot is judged on the platform the cloud's
       // lane runs (D87); `DSH_APPEARANCE=write` records it from this walk.
@@ -389,10 +389,10 @@ function importanceScenario(lane) {
       if (process.env.DSH_APPEARANCE === 'write') writeAppearance(appearance)
       const looks = compareAppearance(appearance)
       const parts = Object.values(appearance).reduce((sum, state) => sum + Object.keys(state).length, 0)
-      checks.push(lane.observe('每个页面形态的外观与快照逐项一致', looks.length === 0,
-        looks.length === 0 ? `${Object.keys(appearance).length} 个页面形态、${parts} 处部件读数` : `${looks.length} 处不同：${looks.slice(0, 4).join('；')}`))
+      checks.push(lane.observe('every page state\'s appearance matches the snapshot item by item', looks.length === 0,
+        looks.length === 0 ? `${Object.keys(appearance).length} page states, ${parts} part readings` : `${looks.length} differences: ${looks.slice(0, 4).join('; ')}`))
       if (process.env.DSH_IMPORTANCE_REFERENCE !== undefined) {
-        checks.push(lane.check('与参照样式表画出的页面一致', drift.length === 0, drift.length === 0 ? `${states.length} 个状态逐元素比对` : drift.map((item) => `${item.state}: ${item.count} 处，如 ${JSON.stringify(item.first[0])}`).join('；')))
+        checks.push(lane.check('the pages match the reference stylesheet', drift.length === 0, drift.length === 0 ? `${states.length} states compared element by element` : drift.map((item) => `${item.state}: ${item.count} differences, e.g. ${JSON.stringify(item.first[0])}`).join('; ')))
       }
       return checks
     },

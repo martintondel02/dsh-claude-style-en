@@ -38,9 +38,9 @@ function composerViewportScenario() {
       await page.setViewportSize({ width: 390, height: 844 })
       const restored = await read(page)
       return [
-        check('可视高度变化后输入区仍完整位于可视区内', resized.bottom <= resized.visibleBottom + 1 && resized.overflow === false, JSON.stringify(resized)),
-        check('视口变化与恢复都保留草稿', before.draft === 'draft kept' && resized.draft === before.draft && restored.draft === before.draft, JSON.stringify({ before: before.draft, resized: resized.draft, restored: restored.draft })),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('after the visible height changes the composer still stands whole inside the visible area', resized.bottom <= resized.visibleBottom + 1 && resized.overflow === false, JSON.stringify(resized)),
+        check('the draft survives both the viewport change and its restore', before.draft === 'draft kept' && resized.draft === before.draft && restored.draft === before.draft, JSON.stringify({ before: before.draft, resized: resized.draft, restored: restored.draft })),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

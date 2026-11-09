@@ -9,6 +9,8 @@
  * instead of shipping. The regex sources stay strings so the page sweep and the
  * final assertion rebuild from one copy.
  */
+import os from 'node:os'
+
 const PROJECT_NAMES = ['demo-project', 'sample-app', 'docs-site', 'theme-lab', 'notes-app', 'e-comm-demo']
 const SESSION_NAMES = [
   'Fix flaky onboarding test',
@@ -22,13 +24,17 @@ const SESSION_NAMES = [
   'Markdown rendering tour',
 ]
 const USERNAME = 'Ada'
+/** The local account name a capture can carry; the author's machine name is kept for upstream runs. */
+const LOCAL_USERNAME = os.userInfo().username
+/** Every name the sweep must replace, the local account and the environment override included. */
+const USER_NAMES = [...new Set([process.env.DSH_SCREENSHOT_USERNAME, LOCAL_USERNAME, 'Nwflower'].filter((name) => typeof name === 'string' && name !== ''))]
 
 /**
  * LEAK covers the local username, drive paths and quota amounts; PATH and
  * BALANCE cover the two rewrites.
  */
-const USERNAME_RE_SOURCE = 'Nwflower'
-const PATH_RE_SOURCE = '[A-Z]:[\\\\/][^\\s"\']*'
+const USERNAME_RE_SOURCE = USER_NAMES.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+const PATH_RE_SOURCE = '(?<![A-Za-z0-9])[A-Z]:[\\\\/][^\\s"\']*'
 const BALANCE_RE_SOURCE = '\u00a5\\s?[0-9][0-9.,]*'
 
 /**
@@ -88,6 +94,46 @@ const SANITIZE_JS = `(() => {
     el.replaceWith(rep)
     swapped++
   })
+  // The account row is the host's own element, so its class name changes with
+  // the host: every text node carrying one of the local account names is
+  // rewritten rather than a fixed selector. The host also re-renders its
+  // greeting and account label from its own state, so a text write alone is
+  // undone within a frame. Each leaf element carrying a name is hidden and
+  // repaints its stand-in from a pseudo-element: the class and the data
+  // attribute survive a text-only re-render, and the hidden text leaves
+  // document.body.innerText, which is what the sweep reads. The leaf is
+  // collected while it still carries the real name, before the write below.
+  const style = document.createElement('style')
+  style.id = 'dsh-sanitize-user'
+  style.textContent = '.dsh-sanitized-user{visibility:hidden;position:relative}' +
+    '.dsh-sanitized-user::after{content:attr(data-sanitized-name);visibility:visible;position:absolute;left:0;top:0;white-space:nowrap}'
+  document.head.append(style)
+  const leafNames = new RegExp(${JSON.stringify(USERNAME_RE_SOURCE)}, 'gi')
+  const leaves = new Set()
+  const finder = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  while (finder.nextNode()) {
+    const node = finder.currentNode
+    if (!leafNames.test(node.nodeValue || '')) continue
+    leafNames.lastIndex = 0
+    const el = node.parentElement
+    if (el === null || el.children.length > 0 || el.closest('#dsh-sanitize-user') !== null) continue
+    leaves.add(el)
+  }
+  for (const el of leaves) {
+    el.setAttribute('data-sanitized-name', (el.textContent || '').replace(new RegExp(${JSON.stringify(USERNAME_RE_SOURCE)}, 'gi'), ${JSON.stringify(USERNAME)}))
+    el.classList.add('dsh-sanitized-user')
+    swapped++
+  }
+  const names = new RegExp(${JSON.stringify(USERNAME_RE_SOURCE)}, 'gi')
+  const nodes = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  while (nodes.nextNode()) {
+    const node = nodes.currentNode
+    const text = node.nodeValue || ''
+    if (!names.test(text)) continue
+    names.lastIndex = 0
+    node.nodeValue = text.replace(names, ${JSON.stringify(USERNAME)})
+    swapped++
+  }
   return swapped
 })()`
 

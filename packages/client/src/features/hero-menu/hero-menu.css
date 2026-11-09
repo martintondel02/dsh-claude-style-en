@@ -70,7 +70,7 @@ body[data-dsh-claude-style] [data-dsh-claude-hero-menu] [role="separator"] {
   margin: 2px 4px !important;
 }
 
-/* The pinned footer ("添加工作区…") keeps the host's spacing with the skin's
+/* The pinned footer ("Add workspace…") keeps the host's spacing with the skin's
    separator. */
 body[data-dsh-claude-style] [data-dsh-claude-hero-menu] > [data-dsh-claude-part~="menu-footer"] {
   margin-top: 4px;

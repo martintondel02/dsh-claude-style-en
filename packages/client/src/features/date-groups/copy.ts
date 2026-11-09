@@ -4,7 +4,7 @@ import { createCopy } from '../../core/i18n'
 export type CopyKey = keyof typeof COPY
 
 /**
- * 本功能自己的界面文字（packages/client/src/features/date-groups/date-groups.copy.json）：
- * 文案跟着 bundle 走，第一帧就有，键名只在这份文件里成立。
+ * The feature's own interface copy (packages/client/src/features/date-groups/date-groups.copy.json):
+ * the copy ships with the bundle, present on the first frame; the keys hold only in this file.
  */
 export const copy = createCopy(COPY)

@@ -74,7 +74,7 @@ body[data-dsh-claude-style] .dsh-claude-process-sample[data-layout="column"] .ds
 /* A thought reads as the thought, and a generic call as its tool and what it
    does: the kind word and its separator step aside where a description
    follows them. A named call keeps its verb, which is what makes its target
-   read (查找文件 · *.md). A thought shows its description only where the host
+   read (Search files · *.md). A thought shows its description only where the host
    marks it a preview. */
 body[data-dsh-claude-style][data-dsh-claude-process-column] [data-step-process-content] :is([data-variant="think"][data-preview], [data-variant="others"]) [data-disclosure-row][data-dsh-claude-holds~="row-summary"] :is([data-dsh-claude-part~="text-title"], [data-shimmer-decoration]),
 body[data-dsh-claude-style] .dsh-claude-process-sample[data-layout="column"] .dsh-claude-process-sample-row[data-kind="thought"] :is(.dsh-claude-process-sample-title, .dsh-claude-process-sample-sep) {

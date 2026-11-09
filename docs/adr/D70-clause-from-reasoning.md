@@ -1,27 +1,27 @@
-# D70. 从推理正文里读出的从句
+# D70. The clause read from the reasoning text
 
-## 背景
+## Background
 
-等待行要说这一轮此刻在做的事，其中一条来源是模型自己写的推理正文：把「I am checking the file is true」这样的句子原样交给读者，比任何转述都可信。从散文里取这样一句没有现成的库可用：通用工具解决的是句子的边界，而「哪一句在说此刻的动作」只有形状规则能回答。规则每放宽一步就多一类误说，每收紧一步就多一种沉默，而这一行说的是事实，读者按它判断这一轮在做什么。
+The waiting line has to say what this turn is doing right now, and one of its sources is the reasoning text the model writes itself: handing the reader a sentence like "I am checking the file is true" as it stands is more credible than any paraphrase. No off-the-shelf library answers this: general tools solve sentence boundaries, and only shape rules can answer "which sentence is talking about the action at this moment." Every relaxation of the rules admits another kind of false statement, every tightening admits another kind of silence, and this line states a fact that the reader uses to judge what this turn is doing.
 
-## 决定
+## Decision
 
-- 只说已经开始的动作。从句的锚点是一个助动词（含缩写，含完成进行时的 `have been`）加一个分词，二者之间至多两个封闭类的词；否定句与还没动手的打算（`Let me …`、`about to …`、光杆分词）都不读，读不出就退回品牌自己的等待词——那一句永远为真。
-- 句子的边界不自己写。哪里是一句的结束交给页面自己的句子规则（`Intl.Segmenter`），本地只留从句这一层的标点，因此文件名、版本号与缩写里的点号不会把说法截断。
-- 主语不进从句，也不按主语判归属。同一形状既有「It's reading the file」也有「The build is running」，本地没有分辨依据，于是不分辨。
-- 只有一种形状由本地判定：英文的助动词加分词。模型自己的字原样带出，行内标记（反引号、成对强调、链接方括号）清掉；引号里的话不读——模型引用它读到的一句话、甚至引用这一行自己那个等待词时，那不是它在说自己正在做什么。中文的「正在」不成一条规则：它与这一行的等待词同形，而本地没有词表能把它与「正在读取 app.js」分开，读错时交给读者的是模型关于这一行的讨论。
-- 只读正文的尾巴，并记住上一次读的那段正文：这一行每四分之一秒读一次，重复读同一段正文不产生新结论。
-- 写下的说法锁一秒，模型自己那句从句另有一条：它在下一次意图到达之前一直站着。模型每秒写下好几个句子，从句之间那几拍读不出东西（正在思考，或刚起一步还没写下什么），在那里退回等待词会让这一行在两种说法之间来回闪；新的从句、调用自带的说法或写回答这类状态一到，它就让位。
-- 不发模型请求，也不改发给模型的请求。这一行的一切判断都在浏览器半面本地完成。
+- Only actions that have already started are stated. A clause is anchored on an auxiliary verb (contractions included, `have been` for the perfect continuous included) plus a participle, with at most two closed-class words between them; negations and intentions not yet begun (`Let me …`, `about to …`, a bare participle) are not read, and when nothing can be read it falls back to the brand's own waiting word — the sentence that is always true.
+- Sentence boundaries are not written locally. Where a sentence ends is left to the page's own sentence rules (`Intl.Segmenter`); locally only the punctuation of the clause layer remains, so a period in a file name, version number or abbreviation does not cut the statement short.
+- The subject does not enter the clause, and attribution is not judged by subject. The same shape covers both "It's reading the file" and "The build is running"; there is no local basis for telling them apart, so they are not told apart.
+- Only one shape is decided locally: an English auxiliary plus participle. The model's own words are carried out as they stand, with inline markers (backticks, paired emphasis, link brackets) stripped; words inside quotation marks are not read — when the model quotes a sentence it read, or even quotes this line's own waiting word, that is not it saying what it is doing. The Chinese progressive marker "正在" does not become a rule: it takes the same form as this line's waiting word, and locally there is no word list that can separate it from "正在读取 app.js"; read wrong, what reaches the reader is the model's discussion of this line.
+- Only the tail of the text is read, and the run read last time is remembered: this line reads four times a second, and reading the same run again produces no new conclusion.
+- A written wording is locked for a second, and the model's own clause has a line of its own: it stands until the next intention arrives. The model writes several sentences a second, and between clauses there are beats with nothing to read (thinking, or a step just begun with nothing written yet); falling back to the waiting word there would make this line flicker between two statements. When a new clause, a call's own wording or a state such as writing the answer arrives, it gives way.
+- No model request is made, and no request sent to the model is changed. Every decision this line makes happens locally in the browser half.
 
-## 后果
+## Consequences
 
-- 能读到的动作是英文的进行时与完成进行时；放弃的是计划句、中文推理里的说法、引号里的内容，以及句子主语与这一轮无关时的正确归属。
-- 换来的是一条零调用、零依赖、逐字来自模型的说法，读者的等待里不会多出一次往返。
-- 从句的取词规则不再依赖任何外部词表或标注器，代价是分词与 `-ing` 名词同形时只能靠一张极短的名单挡住。
-- 从句在下一句意图之前不变：读者不必在两种说法之间追着看，代价是模型长时间不再说自己做什么时，这一行仍写着它上一次说过的从句。
+- The actions that can be read are the English progressive and perfect continuous; given up are plan sentences, wording in Chinese reasoning, content inside quotation marks, and correct attribution when the sentence's subject has nothing to do with this turn.
+- What it buys is a statement with zero calls and zero dependencies, taken word for word from the model, so the reader's wait gains no round trip.
+- The clause's word rule no longer depends on any external word list or tagger, at the cost of a very short list to stop a participle that is also an `-ing` noun.
+- The clause does not change before the next sentence of intent: the reader need not chase between two statements, at the cost that when the model stops saying what it is doing for a long time, this line still carries the clause it last said.
 
-## 重审条件
+## Reconsider when
 
-- 宿主直接给出这一轮正在做什么时，这套读取规则退场。
-- 模型按约定自己写出小结（提示词层）成为可行且便宜时，改用模型自己的小结。
+- When the host states directly what this turn is doing, this reading rule retires.
+- When the model writing its own summary by convention (at the prompt layer) becomes practical and cheap, use the model's own summary.

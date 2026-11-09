@@ -1,45 +1,45 @@
-# D30. 品牌与配色
+# D30. Brand and palette
 
-- **取代**：D50、D64
+- **Replaces**: D50, D64
 
-## 背景
+## Background
 
-皮肤画的是宿主自己的界面，颜色与字体既可能来自宿主，也可能来自另一个主题插件。品牌要在保留宿主品牌与换成皮肤自带品牌之间切换，而使用者还想换上自己的标志与强调色。这些都只换画出来的样子，不改功能的行为；把它们写成功能里的分支，每张样式表都要知道当前是哪个品牌。
+The skin paints the host's own interface, and its colours and fonts may come from the host or from another theme plugin. A brand has to switch between keeping the host's brand and taking the skin's own, and a reader may also want their own mark and accent colour. All of this changes only what is painted, not how features behave; written as branches inside features, every stylesheet would have to know which brand is current.
 
-## 决定
+## Decision
 
-- 配色与字体各是一项偏好，可以选择跟随宿主；跟随宿主时，皮肤的画面读宿主令牌的别名，结果不取决于样式表的加载先后。
-- 品牌按档切换，档决定默认色板与标志，不改功能行为；品牌偏好每加一档，功能样式表不动。
-- 配色切换只靠令牌：一档整套重写宿主别名与皮肤私有令牌，功能样式表一律读令牌。
-- 颜色卡可以钉住任一档的色板：钉住的只是色板，品牌标志仍由品牌偏好决定；「恢复跟随品牌」把色板交回品牌，读者自己的四个颜色保留。
-- 一档的色板由该档的种子颜色与一张共用的音阶表在构建时推出。种子是强调色、明暗画布与行内代码色；侧栏与读者气泡另给一色，正文链接可另给一色，不给则由强调色推出。音阶表是每个颜色令牌相对种子的明度台阶、彩度与透明度，跨档共用。
-- 档与档之间的差别只在种子与一个结构属性：暗色描边的画法（提亮的轮廓或承载面的台阶）。
-- 标志的着色不属色卡：它跟随「标志颜色」这一项偏好，取值是标志原色（按档）、强调色与文字色三种；设置页的品牌区预览按它画出品牌标志与读者上传的图片。
-- 读者可以自己写第三张色卡：四个颜色存成偏好，页面按品牌与明暗两两写出音阶表的相对颜色块，选中的是它时整套色板由它推出；三张卡都能点选，点品牌卡只换色板，读者改一个颜色即切到自己的卡。
-- 皮肤自己定义的颜色令牌，每一档都要有对应的取值或别名，漏掉即构建失败。
-- 音阶推不出的颜色保持字面值：推理滑块的 apex 紫、焦点环、涟漪波前、峰谷计费与投影。
-- 自定义品牌是叠在所选品牌之上的一层：名称、标志图、文字标志、标志着色方式与自己的色卡各自独立，读者没提供的那一项保持所选品牌原样。
-- 自定义品牌不带来行为分歧；某一项带来行为分歧时，它按独立主题包处理，不并入这一层。
-- 强调色只在皮肤自带的配色档下生效；选择跟随宿主时整张色卡都不出现，读者存下的取值留着。
-- 早先版本只有一个强调色；读到的强调色落进自定义卡的第一个颜色，并把那张卡设为选中，画面与存值时一样。
+- Palette and typeface are each a preference that can follow the host; under follow-the-host the skin's surfaces read aliases of host tokens, and the result does not depend on the order the stylesheets load in.
+- Brands switch by tier; a tier decides the default palette and mark and does not change feature behaviour. Adding a brand tier leaves the feature stylesheets untouched.
+- A palette switch works through tokens alone: a tier rewrites the host aliases and the skin's private tokens as one set, and feature stylesheets always read tokens.
+- A colour card can pin any tier's palette: what is pinned is only the palette, and the brand mark is still decided by the brand preference; "Follow the brand again" hands the palette back to the brand and keeps the reader's own four colours.
+- A tier's palette is derived at build time from that tier's seed colours and one shared ladder table. The seeds are the accent, the light and dark canvases and the inline-code ink; the sidebar and the reader's bubble take a colour of their own, and body links may take one too, derived from the accent when they do not. The ladder table holds each colour token's lightness step, chroma and alpha relative to its seed, shared across tiers.
+- Tiers differ only in their seeds and one structural trait: how dark outlines are drawn (a lit highlight or a surface step).
+- Brand art colouring is not part of the colour card: it follows the "Mark colours" preference, whose values are the mark's own colour (per tier), the accent and the text colour; the settings page's brand preview draws the brand mark and the reader's uploaded image by it.
+- The reader can write a third colour card of their own: four colours stored as a preference, with the page writing the ladder's relative colours in a block per brand and scheme; when it is the picked card the whole palette derives from it. All three cards can be picked, picking a brand card changes only the palette, and a reader changing one colour switches to their own card.
+- Every colour token the skin defines needs a value or an alias in every tier; a missing one fails the build.
+- Colours the ladder cannot derive stay literal: the reasoning slider's apex purple, the focus ring, the ripple's front, peak and off-peak billing and the shadow.
+- A custom brand is a layer over the selected brand: name, mark image, wordmark, mark colouring and its own colour card are independent, and whatever the reader does not provide stays as the selected brand has it.
+- A custom brand introduces no behavioural divergence; when one would, it is handled as a separate theme package and not folded into this layer.
+- The accent applies only under the skin's own palette tiers; under follow-the-host the whole colour card is absent, and the reader's stored values remain.
+- Earlier versions had a single accent colour; an accent read from that version lands in the custom card's first colour and selects that card, so the picture matches the stored value.
 
-## 后果
+## Consequences
 
-- 新加一档只写一组种子与标志；改一处共用音阶，所有档一起走。
-- 色板与标志分开：品牌标志的墨色按品牌属性写在色板块之外，钉住另一张颜色卡时标志不跟着换。
-- 共用音阶表让每一档的多数颜色落在手挑值附近而不是原值上，个别强调与墨色最多差几个 ΔE00；档与档之间不再各自手调。
-- 构建输出解析后的静态色值，页面里没有颜色公式；取色、对比度检查与外观快照读到的都是最终颜色。
-- 读者自写的那张卡例外：它的令牌是相对颜色表达式，页面里算出最终颜色，读自定义属性拿到的是表达式本身；对比度按强调色与明暗画布在写入时算好。
-- 强调色的悬停与链接色仍按固定比例混出，个别颜色上不如手调的调色板准。
-- 皮肤自带的私有令牌每加一条，都要在跟随宿主的一档里补上别名，并进音阶表。
-- 功能样式表里画面的颜色一律读令牌；写死颜色在跟随宿主时会被别人画的颜色盖住。
-- 自定义标志图由宿主半边收下并存进读者自己的目录，升级插件而宿主未重启时这些图缺席。
-- 放弃的做法：为每个品牌写一套按品牌分支的规则，把自定义品牌做成再添一档品牌，以及让每档各带一张音阶表。
+- Adding a tier writes one set of seeds and a mark; changing the shared ladder moves every tier at once.
+- Palette and mark are separate: the brand mark's ink is written by brand trait outside the colour card block, so pinning another colour card does not change the mark.
+- The shared ladder puts most of a tier's colours near hand-picked values rather than exactly on them, with an odd accent or ink up to a few ΔE00 apart; tiers are no longer hand-tuned individually.
+- The build output is resolved static colour values, with no colour formulas in the page; colour picking, contrast checks and appearance snapshots all read final colours.
+- The reader's own card is the exception: its tokens are relative-colour expressions, the final colour is computed in the page, and reading the custom property returns the expression itself; contrast is computed when it is written, from the accent and the light and dark canvases.
+- The accent's hover and link colours are still mixed at fixed ratios, which on some colours is less accurate than a hand-tuned palette.
+- Every private token the skin adds needs an alias in the follow-the-host tier and a place in the ladder table.
+- Every painted colour in a feature stylesheet reads a token; a hard-coded colour is overridden by whoever else paints the page under follow-the-host.
+- Custom mark images are taken by the host half and stored in the reader's own directory; after a plugin upgrade without a host restart, those images are absent.
+- Abandoned: writing a set of brand-branching rules per brand, making a custom brand another brand tier, and giving each tier its own ladder table.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供主题层级或令牌分层机制时，配色与字体改用宿主的层级。
-- 宿主提供插件级的文件存储服务时，自定义标志图改存到那里。
-- 宿主侧栏的品牌标志与名称插槽成为稳定扩展点时，侧栏的标志与名称改为注册插槽组件。
-- 新品牌带来行为分歧时，品牌不再只是一组令牌，改为独立的主题包。
-- 某一档需要音阶表表达不出的颜色时，先给它加一条音阶或一个结构属性；同一种颜色在档与档之间反复手调，说明音阶表该重新分档。
+- The host provides a theme layer or a token layering mechanism: palette and typeface use the host's layers.
+- The host provides a plugin-level file storage service: custom mark images go there.
+- The host's sidebar brand mark and name slots become stable extension points: the sidebar's mark and name register slot components.
+- A new brand brings behavioural divergence: the brand stops being a set of tokens and becomes a separate theme package.
+- A tier needs a colour the ladder cannot express: add a rung or a structural trait first; the same colour hand-tuned back and forth across tiers means the ladder needs re-tiering.

@@ -47,8 +47,9 @@ export function createMascotBubble(ctx: HostContext, ui: FeatureUi<typeof manife
   /** Take one cost reading into the spending since the balance was read. */
   function observe(reading: SessionCostReading | null) {
     if (reading === null || reading.cost === null) return
-    // 平台余额只对官方供应商的会话扣减：第三方供应商的花费在它自己的账单里结，
-    // 不从这里走账，余额行就停在平台读到的数字上。
+    // The platform balance is charged only for sessions of official providers: a
+    // third-party provider bills its own spend, so nothing is drawn from the balance
+    // here and the line keeps the figure the platform read.
     if (!reading.official) return
     const seen = spent.get(reading.sessionId)
     if (seen === undefined || seen.currency !== reading.currency) {

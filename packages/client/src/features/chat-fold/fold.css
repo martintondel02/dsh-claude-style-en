@@ -1,5 +1,5 @@
 /* ---------- chat fold: the process group's counted summary ---------- */
-/* A group's header names what the group holds — 「执行 2 次思考，调用 1 次工具」 —
+/* A group's header names what the group holds — "2 thoughts, 1 tool call" —
    instead of the host's list of activities (process-summary.ts). The summary is
    the skin's own span at the end of the header control; the host's words — the
    control's one child it does not mark decorative — step aside while it stands,

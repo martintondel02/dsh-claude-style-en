@@ -65,7 +65,7 @@ export const SETTINGS_SECTION_SLOT = 'settings.section'
  * The plugin's own repository. The settings page's heading links to it, and
  * the address is read from here rather than written into the component.
  */
-export const REPOSITORY_URL = 'https://github.com/Nwflower/dsh-claude-style'
+export const REPOSITORY_URL = 'https://github.com/martintondel02/dsh-claude-style-en'
 
 /** The document attribute the stylesheet switches on. */
 export const BRAND_ATTR = 'data-dsh-claude-brand'
@@ -208,7 +208,7 @@ export const EFFORT_ACCENT_ATTR = 'data-dsh-claude-effort-accent'
  */
 export const PAGE_ZOOM_ATTR = 'data-dsh-claude-page-zoom'
 
-/** 缩放倍率走的自定义属性：任何数字都成立，chrome.css 的 `zoom` 读它。 */
+/** The custom property the zoom factor travels on: any number works, and chrome.css's `zoom` reads it. */
 export const PAGE_ZOOM_VAR = '--dsh-claude-page-zoom-factor'
 /** Ordinary interface text's percentage and its scale, independent of the page's scale. */
 export const INTERFACE_FONT_SIZE_ATTR = 'data-dsh-claude-interface-font-size'
@@ -232,7 +232,7 @@ export const PAGE_UNDER_480_ATTR = 'data-dsh-claude-page-under-480'
  */
 export const BACKGROUND_OPACITY_ATTR = 'data-dsh-claude-background-opacity'
 
-/** 背景不透明度走的自定义属性：0 到 1 的系数，画布填充的 color-mix 读它。 */
+/** The custom property the background opacity travels on: a factor from 0 to 1, read by the canvas fills' color-mix. */
 export const BACKGROUND_OPACITY_VAR = '--dsh-claude-background-opacity'
 
 

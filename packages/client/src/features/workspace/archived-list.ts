@@ -13,7 +13,7 @@ export const ARCHIVED_PAGE_SIZE = 30
  * The host's own tree prunes by the full list the same way (a deleted session's
  * stale summary leaves when the baseline is re-pulled), and orders its rows by
  * when they last moved; both come from the host's snapshots, so the skin's list
- * and the host's filter never disagree about what 已归档 holds.
+ * and the host's filter never disagree about what Archived holds.
  */
 export function archivedOrder(archivedIds: readonly string[], byId: Record<string, HostSessionSummary>, current?: string | null): string[] {
   const out: string[] = []
@@ -49,9 +49,9 @@ export interface ArchivedListDeps {
   host: ArchivedListHost
   actions: ArchivedListActions
   /**
-   * 宿主自己的提示气泡（shared/host-tooltip.ts）：列表的控件由皮肤拼出来，
-   * 提示仍然用宿主那一份。不交时行上不挂提示 —— 逻辑规范在 React 之外读这个
-   * 模块，行照常画出来。
+   * The host's own tooltip (shared/host-tooltip.ts): the list's controls are built
+   * by the skin, and the tip stays the host's. Without it no tip is hung on a row —
+   * the logic specs read this module outside React, and the rows still render.
    */
   tooltip?(control: HTMLElement, label: string, options?: HostTooltipOptions): HostTooltip
   /** Ask for a pass (the scheduler's), so a snapshot change re-renders in the write phase (D40). */
@@ -101,7 +101,7 @@ const TITLE_CLASS = 'dsh-claude-ws-archived-title'
 const TITLE_ANCHOR_CLASS = 'dsh-claude-ws-archived-title-anchor'
 
 export interface ArchivedList {
-  /** Seat the list in the section root at the first page; re-entering 已归档 starts over at the top. */
+  /** Seat the list in the section root at the first page; re-entering Archived starts over at the top. */
   mount(root: Element): void
   /** Take the list off the page; the host's tree is back where the segment left it. */
   unmount(): void
@@ -133,7 +133,7 @@ function nearBottom(element: HTMLElement): boolean {
 }
 
 /**
- * The 已归档 segment's own list, rendered by the skin in plain DOM — the skin's
+ * The Archived segment's own list, rendered by the skin in plain DOM — the skin's
  * self-drawn surfaces are plain nodes, and the stand-in host's React is inert
  * by design. One page of ARCHIVED_PAGE_SIZE rows stands first and the reader's
  * scroll to the foot appends the next; the empty archive says so in the

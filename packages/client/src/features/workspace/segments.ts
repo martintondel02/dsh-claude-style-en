@@ -11,12 +11,12 @@ export const SEGMENTS: { id: SegmentView, key: CopyKey }[] = [
 ]
 
 /**
- * The 进行中 / 已归档 segment control, laid over the section's own heading: the
+ * The Active / Archived segment control, laid over the section's own heading: the
  * two segments write the host's view store (the follower's drive), and the
  * control's look is the shared small segment look
- * (shared/segment-control.css). While 进行中 is the state the control steps
+ * (shared/segment-control.css). While Active is the state the control steps
  * aside for the plain heading and comes back on hover (workspace.css); in
- * 已归档 it stays put, because it is the way back.
+ * Archived it stays put, because it is the way back.
  */
 export function createSegmentControl(onSelect: (view: SegmentView) => void) {
   /** The control element, kept while the section stands; released with it. */

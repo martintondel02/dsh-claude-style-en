@@ -7,7 +7,7 @@ export default {
   load: 'deferred',
   reads: ['quickProviders'],
   contracts: ['shell.dark-theme', 'shell.windows-titlebar'],
-  ungated: '设置页本身，以及随它一起装上的主题翻转抑制',
+  ungated: 'The settings page itself, and the theme-flip suppression installed with it',
   stylesheets: [
     { file: 'settings.css', rank: 310 },
     { file: 'settings-zoom.css', rank: 311 },

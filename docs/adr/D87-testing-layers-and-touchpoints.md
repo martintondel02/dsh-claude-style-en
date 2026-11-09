@@ -1,52 +1,52 @@
-# D87. 测试分层与触点
+# D87. Testing layers and touchpoints
 
-- **取代**：D66、D77、D86
+- **Replaces**: D66, D77, D86
 
-## 背景
+## Background
 
-测试要回答的问题分属不同的层次，代价差别很大：逻辑层在秒级给出答案，行为层要起浏览器、等页面稳定。把这些检查堆在一条通道里，改一个文件也要付出整条通道的等待；断言写成钟点与像素量值时，同一份代码在忙碌的机器上失败，失败之后只剩放宽断言这一条路。
+The questions the tests have to answer belong to different layers with very different costs: the logic layer gives an answer in seconds, while the behaviour layer has to start a browser and wait for the page to settle. Piled into one lane, changing one file also pays the wait of the whole lane; and when assertions are written as clock times and pixel measurements, the same code fails on a busy machine, leaving only the option of loosening the assertion.
 
-分层之外，还有一个问题没有回答：测试经由什么接触产品。单元测试与源码同目录，经相对路径导入私有模块与私有常量，断言写在内联样式与内部类名上，有的把功能的样式表复制进测试再对着副本测量；冒烟与端到端的探针也直接拼写皮肤自己的类名与属性。于是纯结构的改动会让测试变红，而只在整页上出现的缺陷——读者在动效已经画出之后才要求减弱动效——落在单元测试的视线之外。体系里也没有办法说明一条断言能不能抓住缺陷。
+Beyond layering there is another unanswered question: how the tests touch the product. Unit tests sit beside the source, import private modules and private constants by relative path, assert on inline styles and internal class names, and some copy a feature's stylesheet into the test and measure the copy; the smoke and end-to-end probes also spell out the skin's own class names and attributes. A purely structural change therefore turns tests red, while defects that show up only on the whole page — a reader asking for reduced motion after the animation has already been painted — fall outside the unit test's view. The system also has no way to say whether an assertion can catch a defect.
 
-浏览器通道只在推送之后观察、不给推送结论时，推送带进主干的回归会一直留在那里：之后的每次推送都在同一处变红，从主干分出的拉取请求也跟着变红，读结论的人分不出哪一片红属于自己的改动。
+When the browser lane only observes after a push and gives the push no verdict, a regression a push brings to main stays there: every later push turns the same place red, pull requests branched from main turn red with it, and the person reading the verdict cannot tell which red piece belongs to their change.
 
-同一棵树判过一遍之后还要在发布流程里再判一遍，两次之间没有任何东西改变，第二次只是把同一份等待支付了一次。另一边，宿主与平台会在两次发布之间移动：只在拉取请求上遇到的宿主变化，要等到下一次有人开拉取请求才被发现。
+Once a tree has been judged, judging it again in the release flow changes nothing in between, and the second time only pays the same wait once more. On the other side, the host and the platform move between releases: a host change encountered only on a pull request waits until someone opens the next pull request to be found.
 
-## 决定
+## Decision
 
-- 测试只有一个入口。发起一次运行就是发起整套判定，各处不再另开自己的脚本与通道。
-- 测试按「读什么」分档与分批：不读构建产物的检查与逻辑层、机制层同批起跑，读构建产物的冒烟、行为层与端到端在构建写完之后同批起跑，一批的耗时是其中最长的一个。一次运行只覆盖当前改动到达的范围，需要更宽的范围时按名字点名。
-- 每一层只回答它能回答的问题。静态层回答规则与文档；逻辑层回答函数的输入与输出；机制层回答引擎机制交给订阅者的结果与顺序；冒烟回答产物能否装载、功能的安装与拆除是否成对、开关能否翻转、延后取回的块能否到达；行为层在替身宿主上回答读者能看见的结果；端到端在真实宿主上回答同样的问题。
-- 规范只经三条通道接触产品：浏览器半边声明的逻辑面与各包的公开模块；两张表——宿主契约表与皮肤表面表——按编号取宿主与皮肤的标记；读者能观察到的结果。规范不导入源码路径，不拼写宿主或皮肤的标记，不用替身换掉产品自己的代码，不留代码快照。
-- 替身只站在系统的边界上：宿主页面与它的服务、设置表单、模型服务、账户平台、操作系统的焦点。观察浏览器自己的方法只为一项决策写明的代价（例如整文档查询的次数），并在旁边写出是哪一项。
-- 规范按用户能力组织：目录是「层/能力」，每个文件开头写明它守护的能力、覆盖的功能目录，以及失败时读者哪里受损。测试的编号是「层/能力/名称」，源码改名、移动、拆分都不改变它。
-- 断言要证明自己是活的：规范要被已知故障打红过才算数。故障是对源码的补丁，在临时副本里构建并运行；故障语料取自历史修复中仍能在当前树上逆转的那些，以及按规范意图写下的故障；新旧两套在同一份语料上的捕获率要能对比。
-- 因已被认领的产品缺陷而失败的行为测试，由人写进隔离记录：它照常运行与打印，失败不阻断，通过反而阻断，直到条目移除。不设「重试转绿」，隔离记录只减不增。
-- 旧测试代码里拼写的皮肤标记记在台账里，按文件计数，只减不增；新代码从表面表读取。
-- 断言读用户可观察的结果与页面自己记下的序列：属性、文字、元素在不在、盒子的位置关系、计算样式、正在运行的动画、滚动终点，以及页面在帧回调里记下的序列满足的不变式。钟点阈值、帧数与单个像素量值都不进断言。
-- 两种时长本身就是被测的行为，作为例外进断言：产品规格写明的一段时长，由页面用自己的时钟记下每一刻，边界取自规格；性能场景量的就是耗时，比较同一回合在两个会话长度上的比值，并给出上限。
-- 等待某个状态出现或等页面静置时，限时只用来让卡住的等待按名字失败。
-- 动效只在页面记下的序列上判定：序列单调、中间经过多个不同的值、终点等于目标。曲线的形状留在逻辑层。
-- 静置的判定是页面上的全部有限动画都已结束，且页面在连续若干帧里没有新的变化。需要数帧的地方改读这些帧覆盖的时间跨度，阈值写成毫秒。
-- 行为层的视口档位分立在样式表声明的每个断点两侧，一个新断点先成为一个新档位。端到端只对宿主最新发布的版本给出结论，不论它挂在哪个发行标签下；本机的宿主不同时，那一层不给结论，一次运行的答案是「未判定」。
-- 外观用计算值快照对照：快照在真实宿主上读取，只收与字体无关的属性。检查按「谁的输出」分两档：仓库自己的行为与契约阻断合并；宿主输出的精确记录作为观察，与记录不同时报告而不阻断。
-- 开发期不设本机测试闸门：改动以构建与真实页面为准，提交与推送不等待任何本机测试运行，构建也不等待测试的锁。推送到主干时，云端给出的这次推送的结论包括不读页面的检查、构建、逻辑层与机制层，以及改动到达的那部分冒烟与行为层：改动的文件都在有冒烟用例的功能目录里时，只跑这些目录的冒烟用例与行为层规范；触及共享层或无法归到功能目录的路径时，跑冒烟的快速档与全部行为层规范。独立的观察通道在只跑了部分目录的推送之后补跑冒烟的快速档与全部行为层规范，它不进分支规则；推送的结论已经跑过这两项时，观察通道不再重复。拉取请求与合并队列的门禁不变。冒烟的全部用例、三平台的行为层与端到端集中在发布之前，先在主干上完整运行一次，失败逐条修复、逐条重跑，全部通过后才切版本；版本标签触发的发布流程读的是这一次的结论，同一条提交上不再跑第二遍：结论为绿时它只打包、跑不读页面的检查并发布，没有结论、结论不为绿，或某条通道在那次运行里被跳过时，它在打包之前失败并指出该在哪条提交上发起那次运行。
-- 宿主与平台在两次发布之间的移动每天报一次：最新发布宿主上的端到端（默认表里的契约场景在内）与 macOS 的行为层各跑一次，它们不进分支规则，也不替发布矩阵作答，一条红色结论按它跑过的提交去读。
-- 每道闸门带着云端同一步骤的时限，超过时限的闸门连同它启动的浏览器一起结束，锁随之释放，一条卡住的通道不会把后面的运行堵住。
-- 一次运行只对它读过的那棵树成立；行为层的失败默认是产品缺陷，放宽断言的改动要在提交说明里写出旧断言误判了哪一种产品行为。
+- Tests have one entry. Starting a run starts the whole judgement, and the places no longer open scripts and lanes of their own.
+- Tests are tiered and batched by what they read: the checks and the logic and mechanism layers, which read no build output, start together, and the smoke, the behaviour layer and end-to-end, which read the build output, start together once the build has finished; a batch takes as long as its longest member. A run covers only the scope the current change reaches, and a wider scope is named by name.
+- Each layer answers only what it can. The static layer answers rules and documents; the logic layer answers a function's inputs and outputs; the mechanism layer answers what the engine's mechanisms hand to subscribers and in what order; the smoke answers whether the artifact loads, whether a feature's install and teardown pair up, whether the switch flips, whether a deferred chunk arrives; the behaviour layer answers on a stand-in host what the reader can see; end-to-end answers the same questions on the real host.
+- A spec touches the product through three channels only: the logic surface the browser half declares and the public modules of each package; the two tables — the host contract table and the skin surface table — reading host and skin markers by id; and the results the reader can observe. A spec imports no source path, spells no host or skin marker, replaces no product code with a stand-in, and leaves no code snapshot.
+- A stand-in sits only on the system's boundary: the host page and its services, the settings form, the model service, the account platform, the operating system's focus. Observing a method of the browser itself is written only for a cost a decision states (the number of whole-document queries, say), with the decision named beside it.
+- Specs are organized by user capability: the directory is `<layer>/<capability>`, and each file states at its top the capability it guards, the feature directories it covers, and where the reader is hurt when it fails. A test's id is `<layer>/<capability>/<name>`, and renaming, moving or splitting source does not change it.
+- An assertion has to prove it is alive: a spec counts only once a known fault has turned it red. A fault is a patch to the source, built and run in a temporary copy; the fault corpus is taken from historical fixes that still reverse on the current tree, together with faults written to the spec's intent; the catch rates of the old and new sets on the same corpus have to be comparable.
+- A behaviour test that fails over a product defect someone has taken up is written into the quarantine record by hand: it still runs and prints, a failure does not block, a pass blocks, until the entry is removed. There is no "retry until green", and the quarantine record only shrinks.
+- Skin markers spelled in old test code are kept in the ledger, counted per file, and only shrink; new code reads the surface table.
+- Assertions read reader-observable results and the sequences the page records itself: attributes, text, whether an element is present, the positional relationship of boxes, computed style, animations running, the scroll endpoint, and the invariants satisfied by the sequences the page records in frame callbacks. Clock thresholds, frame counts and single-pixel values do not enter assertions.
+- Two kinds of duration are themselves the behaviour under test and enter assertions as exceptions: a duration the product spec states, with the page recording each instant by its own clock and the bounds taken from the spec; and a performance scenario, which measures elapsed time, compares the ratio between two session lengths in the same round, and gives an upper bound.
+- When waiting for a state to appear or the page to settle, a time limit is used only to make a stuck wait fail by name.
+- Motion is judged only on the sequence the page records: monotonic, passing through several distinct values, ending at the target. The curve's shape stays in the logic layer.
+- Settled means every finite animation on the page has ended and the page shows no new change across several consecutive frames. Where frames have to be counted, the time span those frames cover is read instead, with thresholds written in milliseconds.
+- The behaviour layer's viewport tiers straddle each breakpoint the stylesheet declares, and a new breakpoint becomes a new tier first. End-to-end gives a verdict only on the newest host version published under any dist-tag; when the local host is different, that layer gives no verdict and the run's answer is "unjudged".
+- Appearance is compared against computed-value snapshots: a snapshot is read on the real host and keeps only properties unrelated to type. The checks are tiered by whose output it is: the repository's own behaviour and contracts block a merge; the exact record of the host's output is an observation that reports a difference from the record without blocking.
+- Development has no local test gate: a change is carried by the build and the real page, a commit or push waits on no local test run, and the build does not wait on the test lock. On a push to main, the verdict the cloud gives that push covers the checks that read no page, the build, the logic and mechanism layers, and the part of the smoke and behaviour layers the change reaches: when every changed file lies in a feature directory that has smoke cases, only those directories' smoke cases and behaviour specs run; when the change reaches the shared layer or a path that cannot be assigned to a feature directory, the smoke's quick tier and every behaviour spec run. A separate observation lane runs the smoke's quick tier and the whole behaviour lane after a push that walked only part of the directories; it joins no branch rule, and when the push's verdict already ran those two it does not repeat them. The pull request and merge-queue gates are unchanged. The whole smoke walk, the behaviour lane on all three platforms and end-to-end are concentrated before a release: run them once in full on main, fix each failure and rerun it one by one, and cut the version only after everything passes; the release flow triggered by the version tag reads that run's verdict and does not run a second one on the same commit — when the verdict is green it only packs, runs the checks that read no page and publishes; when there is no verdict, the verdict is not green, or a lane was skipped in that run, it fails before packing and says which commit the run belongs on.
+- The movement of the host and the platform between releases is reported once a day: end-to-end on the newest published host (the default table's contract scenarios included) and the behaviour layer on macOS each run once; they join no branch rule and do not answer for the release matrix, and a red verdict is read against the commit it ran on.
+- Every gate carries the cloud step's own deadline and is taken down past it, browsers it started included, the lock is released, and a stuck lane does not block the runs after it.
+- A run holds only for the tree it read; a behaviour-layer failure is a product defect by default, and a change that loosens an assertion states in its commit message which product behaviour the old assertion misjudged.
 
-## 后果
+## Consequences
 
-- 移动或拆分一个模块只改声明的逻辑面；改皮肤的一个类名只改表面表的一行；宿主改名只改契约表的一行。规范文件不随这些改动变化。
-- 行为层的边界就是替身宿主的边界：替身渲染不了的界面（由 React 渲染的面板）只能在逻辑层对着随产品发布的样式表测，或交给端到端层。
-- 逻辑层跑在浏览器里：声明的逻辑面所在的模块会经引擎的宿主访问在导入时触碰文档，换成纯 Node 环境要先拆这些依赖。
-- 放弃的是与源码同目录的单元测试、经私有路径的导入、复制样式表的夹具，以及失败后自动重试、自动隔离；换来的是规范的身份、触点与生死都能由工具读出。
-- 推送带来的浏览器通道缺陷由这次推送自己的结论报出，指向推送者：主干上的回归在引入它的那次推送上变红，此后的拉取请求不再替它变红。主干不要求状态检查，红色的推送结论不阻止提交进入主干，由推送者在下一次推送里修复；改动到达范围之外的影响由观察通道补报。发布前的完整矩阵仍是发布的前提，缺了它的标签在打包之前就停住，而不是在发布流程里自己走一遍补齐。
-- 代价是只改功能目录的推送要多付这些目录的浏览器用例时间，触及共享层的推送要多付快速档的时间；本机的每次改动仍只付构建的时间，多个会话也不为同一台机器上的测试排队。
-- 平台各自判它独有的东西：Windows 上判宿主半边的目录、盘符与文件时间，页面的排版交给 Linux 与 macOS，三平台的行为层落在发布矩阵与每日那次运行上。一条通道只在它读到的环境里有意义时，别的平台上重复它只是重付一次等待。
-- 放弃的是在发布流程里重跑闸门的那一步；换来的是发布只付一次等待，而那次等待发生在切版本之前，正是要修的时候。
+- Moving or splitting a module changes only the declared logic surface; renaming one of the skin's classes changes one row of the surface table; renaming a host class changes one row of the contract table. Spec files do not change with these.
+- The behaviour layer's boundary is the stand-in host's boundary: interface the stand-in cannot render (panels React renders) can only be tested in the logic layer against the stylesheet shipped with the product, or handed to end-to-end.
+- The logic layer runs in a browser: the modules of the declared logic surface touch the document on import through the engine's host access, and moving to pure Node would mean separating those dependencies first.
+- Given up: unit tests beside the source, imports through private paths, fixtures that copy stylesheets, and automatic retry and quarantine after a failure; gained: a spec's identity, touchpoints and life can be read by tools.
+- A browser-lane defect a push brings is reported by that push's own verdict and points at the pusher: a regression on main turns red on the push that introduces it, and later pull requests no longer turn red for it. Main requires no status check, and a red push verdict does not keep a commit off main; the pusher fixes it in the next push. Effects outside the change's reach are reported by the observation lane. The full matrix before a release is still a precondition for releasing, and a tag without it stops before packing instead of walking it in the release flow.
+- The cost is that a push changing only feature directories pays extra browser-case time for those directories, and a push touching the shared layer pays the quick tier's time; any local change still pays only the build's time, and several sessions do not queue for the tests on one machine.
+- Each platform judges what is its own: on Windows the host half's directories, drive letters and file times are judged, page layout is left to Linux and macOS, and the behaviour layer on all three platforms lands on the release matrix and the daily run. When a lane means anything only in the environment it reads, repeating it on another platform pays the same wait again.
+- Given up: rerunning the gates in the release flow; gained: a release pays one wait, and that wait happens before the version is cut, exactly when fixes are being made.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供官方的插件测试环境时改用宿主的。
-- 变异测试工具能直接驱动浏览器模式的逻辑层时，故障由它生成，语料只留历史缺陷。
+- When the host provides an official plugin test environment, use the host's.
+- When a mutation-testing tool can drive the browser-mode logic layer directly, faults are generated by it and the corpus keeps only historical defects.

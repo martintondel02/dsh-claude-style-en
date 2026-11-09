@@ -152,7 +152,7 @@ function processSummaryScenario({ check }) {
           JSON.stringify(headers.map((header) => header.name)) === JSON.stringify(expected) &&
             headers.every((header) => header.form === 'full') && headers[0]?.text === expected[0],
           JSON.stringify({ expected, got: headers.map((header) => ({ form: header.form, text: header.text, name: header.name })) })),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

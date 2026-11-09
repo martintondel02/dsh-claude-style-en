@@ -319,7 +319,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   /**
    * Build the rows when the turns changed. A turn without a prompt (one
    * opened by something other than a message) reads as the host's own
-   * 「第 N 轮」, the words its rail preview gives it.
+   * "Turn N", the words its rail preview gives it.
    */
   function renderRows(list: HTMLElement, items: TurnItem[], chat: (key: string, params: { turn: number }) => string) {
     if (rowItems === items) return

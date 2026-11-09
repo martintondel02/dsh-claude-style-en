@@ -126,14 +126,14 @@ function readerScrollScenario({ check }) {
       const floated = after.filter((frame) => frame.pinned && frame.row !== null
         && !(frame.row > left.row && frame.row < left.row + PIN_SLACK_PX))
       return [
-        check('逐帧采样真的在跑', trace.length > 30 && left !== null && left.frame > 30, `${trace.length} frames, the wheel at ${left === null ? 'n/a' : left.frame}`),
-        check('读者的滚动发生在状态行钉住时', left !== null && pinnedSpot !== null && Math.abs(left.row - pinnedSpot) <= 2, `the wheel at row ${left === null ? 'n/a' : left.row}, the pinned spot ${pinnedSpot === null ? 'never pinned' : `${pinnedSpot}px`} (${spots.length} frames)`),
-        check('滚动之后对话由读者接管', left !== null && heldNow, left === null ? 'no reader phase in the trace' : `gap ${left.gap}px when the wheel landed`),
-        check('读者滚动期间状态行不再钉住', left !== null && pinnedAfter.length === 0, `${pinnedAfter.length} pinned of ${after.length} frames after the wheel`),
-        check('读者的接管一直记在滚动容器上', left !== null && heldNow, `the container carries the mark at the end of the turn: ${heldNow}`),
-        check('后续增长不改变读者选择的滚动位置', left !== null && left.top !== null && after.length > 10 && after.every((frame) => frame.top === left.top), left === null ? 'no reader position' : `wanted ${left.top}px, readings ${[...new Set(after.map((frame) => frame.top))].join('/')}px`),
-        check('状态行不再浮在内容上', floated.length === 0, floated.length === 0 ? 'held its document place' : `${floated.length} frames at the pinned spot`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the frame sampling really runs', trace.length > 30 && left !== null && left.frame > 30, `${trace.length} frames, the wheel at ${left === null ? 'n/a' : left.frame}`),
+        check('the reader scrolls while the status line is pinned', left !== null && pinnedSpot !== null && Math.abs(left.row - pinnedSpot) <= 2, `the wheel at row ${left === null ? 'n/a' : left.row}, the pinned spot ${pinnedSpot === null ? 'never pinned' : `${pinnedSpot}px`} (${spots.length} frames)`),
+        check('after the scroll the reader owns the conversation', left !== null && heldNow, left === null ? 'no reader phase in the trace' : `gap ${left.gap}px when the wheel landed`),
+        check('while the reader scrolls the status line is no longer pinned', left !== null && pinnedAfter.length === 0, `${pinnedAfter.length} pinned of ${after.length} frames after the wheel`),
+        check('the reader\'s takeover stays marked on the scroller', left !== null && heldNow, `the container carries the mark at the end of the turn: ${heldNow}`),
+        check('later growth does not move the position the reader chose', left !== null && left.top !== null && after.length > 10 && after.every((frame) => frame.top === left.top), left === null ? 'no reader position' : `wanted ${left.top}px, readings ${[...new Set(after.map((frame) => frame.top))].join('/')}px`),
+        check('the status line no longer floats over the content', floated.length === 0, floated.length === 0 ? 'held its document place' : `${floated.length} frames at the pinned spot`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

@@ -1,32 +1,32 @@
-# D40. 页面级资源各有唯一拥有者
+# D40. Page-level resources have one owner each
 
-- **取代**：D6、D41、D26
+- **Replaces**: D6, D41, D26
 
-## 背景
+## Background
 
-功能各自建立观察者时，先后次序只能碰运气：两个观察者谁先建立，决定了跟随与宿主谁把滚动位置写到最后。功能各自查询整份文档时，每一次读取的成本都随页面规模增长，长会话每一帧都在为整页付费。功能各自读系统设置时，样式表与脚本拿到的答案还不一致。页面上被共同使用的东西，需要各有唯一一个拥有者。
+When features each set up their own observers, the ordering is down to luck: which of two observers is set up first decides whether the follow or the host writes the scroll position last. When features each query the whole document, every read grows in cost with the page, and in a long conversation every frame pays for the whole page. When features each read system settings, stylesheets and scripts do not even get the same answer. Things shared on the page need one owner each.
 
-## 决定
+## Decision
 
-- 对页面上变化的观察只有一个观察总线：功能向它订阅，订阅写明目标与关心的变化种类；总线合并同一份目标上的订阅、按各自的选项把记录分回去，回调按订阅建立的先后执行，没有订阅时把观察者整个摘下。小批次的回调在观察者的回调里当场执行，仍在绘制之前；一次会话切换那样的大批次移到下一轮任务、按 8 毫秒预算分片执行，功能回调都是幂等扫描，晚这一拍只影响扫描本身。订阅可以声明 `beforePaint`：这类订阅在观察者的回调里当场执行，排在该批次推迟的订阅之前，批次再大也在绘制之前，供那些写入样式要读的标记使用；其余订阅照旧推迟。盒子的几何测量不做在这类订阅里：它交给帧管线的读取阶段，与同一帧其他功能的测量合成一次读取，写入之后再按帧写回。
-- 宿主节点的读取走总线按选择器维护的清单，随变化按批增量维护，功能在刷新里查询整份文档的做法被禁止；功能取用时登记、卸载时释放，最后一个读者放掉时订阅随之摘下。
-- 每一帧的调度只有一个帧管线：整页只有一个动画帧请求，一帧里先依次读取、再依次写入，功能把测量与写入分成两处各归其位；滚动主人写滚动位置排在两者之间，趁读取刚把布局算好时写，免得替别人的写入付一次布局。视口变化引起的重新定位也经它合并，读者自己的滚轮不在此列。
-- 聊天区的滚动位置只有滚动主人可以写，每个滚动容器各自仲裁；请求按来源分定优先级，插件的跳转、跟随与追赶都经它。读者自己的滚轮属于浏览器，滚动主人不接管这个事件，只把它记成读者动过、并据此拒绝跟随。
-- 动画档位在唯一一处解析成文档上的一个值，脚本与样式表读同一个值；功能不各自读系统设置。系统设置中途翻转或另一个聊天插件装卸时，重新解析一次并重跑偏好监听。
-- 订阅、尺寸登记与帧任务随功能的安装成对增删；出错时报告这一次，其余订阅与任务照常运行。
-- 只记时刻、不引起页面变化的活动（指针移动）走单独一条上报通道，功能据此知道读者在场。
+- Observing changes on the page goes through one observation bus: features subscribe with a target and the kinds of change they care about; the bus merges subscriptions on the same target, routes records back by each subscription's options, runs callbacks in subscription order, and takes an observer down entirely when it has no subscriptions left. Small batches run their callbacks right there in the observer's callback, still before paint; a large batch such as a session switch moves to the next task and runs in slices on an 8-millisecond budget. A feature callback is an idempotent scan, so arriving one beat late affects only the scan. A subscription can declare `beforePaint`: such subscriptions run in the observer's callback, ahead of the batch's deferred subscriptions, still before paint however heavy the batch, for markers that style writes have to read; the rest stay deferred. Box geometry is not measured in such a subscription: that goes to the frame pipeline's read phase, merged into one read with the other features' measurements in the same frame, and written back by frame after the writes.
+- Host nodes are read through the list the bus keeps by selector, maintained incrementally in batches as changes arrive; a feature querying the whole document on refresh is forbidden. A feature registers when it reads and releases when it uninstalls, and the subscription comes down when the last reader lets go.
+- Each frame is scheduled through one frame pipeline: the whole page makes one animation-frame request, each frame reads in order and then writes in order, and features put their measurements and their writes in their own places; the scroll owner's position write sits between them, writing while the layout the read just computed is fresh, so it does not pay for a layout caused by someone else's write. Repositioning caused by a viewport change is merged through it too; the reader's own wheel is not part of that.
+- Only the scroll owner writes the chat area's scroll position, arbitrating per scroll container; requests are prioritized by source, and the plugin's jumps, follow and catch-up all go through it. The reader's own wheel belongs to the browser: the scroll owner does not take that event over, only records that the reader moved and refuses to follow on account of it.
+- The animation choice is resolved in one place into a value on the document, and scripts and stylesheets read the same value; features do not read system settings themselves. When the system setting flips or another chat plugin is installed or removed, it resolves once more and reruns the preference listeners.
+- Subscriptions, size registrations and frame tasks are added and removed in pairs with a feature's install; on failure the failure is reported and the other subscriptions and tasks carry on.
+- Activity that only records a moment and causes no page change (pointer movement) travels on a separate reporting channel, from which a feature knows the reader is present.
 
-## 后果
+## Consequences
 
-- 观察总线与帧管线成为所有功能的公共依赖，它出错影响整页，分发次序、选项路由与调度阶段要靠覆盖最完整的核对来固定。
-- 浏览器原本替每个订阅做的筛选改由总线在脚本里逐条判定，订阅者增多时这份判定变重。
-- 功能把测量与写入分开，读盒子的部分与改界面的部分各归一处；写阶段里还想读的功能，读到的是本帧在此之前的写入。
-- 新增一个滚动来源要同时改优先级判定与核对。读者自己的滚轮与插件画出来的滑动是两种运动，插件的滑动有它自己的速度上限与曲线，长距离滑动到两端会被夹住。
-- 大批次的回调晚一拍：它读到的页面已经画过一帧。依赖同一次绘制前写入的交互（发送回显的隐藏、卷帘门按下的高度）只在批次重量不超过阈值时拿得到；重量按记录数加每个新增节点的子元素数估，估不到深层巨型挂载时仍留在同步一侧。声明 `beforePaint` 的订阅是例外：它的成本落在绘制前的那一帧里，只该用来写样式要读的标记，不跑扫描，也不读盒子；把测量放进这个回调，会在刚挂上、样式尚未算完的树上一次接一次地强制重排，换树时的延迟由此叠加。测量走帧管线的读取阶段，同一帧只读一次。
-- 批次重量的阈值与 8 毫秒的分片预算写死在总线上，调整它们要连同「哪些功能依赖同帧派发」的核对一起看。
+- The observation bus and the frame pipeline become a shared dependency of every feature; a fault in either affects the whole page, so the dispatch order, option routing and scheduling phases have to be pinned by the most complete checks.
+- The filtering the browser used to do for every subscription is now decided by the bus in script, one by one; with more subscribers that decision gets heavier.
+- Features separate measurement from writing, each going to its own place; a feature that still wants to read during the write phase reads the writes made earlier in that frame.
+- Adding a scroll source means changing both the priority decision and the checks. The reader's own wheel and a slide the plugin paints are two kinds of motion; the plugin's slide has its own speed limit and curve, and a long slide is clamped at both ends.
+- A large batch's callback runs one beat late: the page it reads has already painted a frame. Interactions that depend on writing before that same paint (hiding the send echo, the height a roll-up door presses down) get it only when the batch's weight stays under the threshold; weight is estimated by record count plus each added node's child count, and an estimate that cannot reach a deep, huge mount stays on the synchronous side. A subscription declaring `beforePaint` is the exception: its cost lands in the frame before paint, so it should only write markers that styles read, run no scans and read no boxes; putting measurement in that callback forces reflow again and again on a tree that was just mounted and has no styles computed yet, and the delay on a tree swap therefore compounds. Measurement goes through the frame pipeline's read phase, which reads once per frame.
+- The batch weight threshold and the 8-millisecond slicing budget are hard-coded in the bus; changing them means looking together at the checks for which features depend on same-frame dispatch.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供统一的页面变化订阅或渲染阶段钩子时，观察总线与帧管线改为接入宿主的。
-- 宿主开放可替换的滚动跟随策略时，跟随部分注册进宿主，这里只保留皮肤自己的跳转与过渡。
-- 宿主能直接报告一次会话切换完成、或提供可等待的渲染阶段时，批次重量的阈值判定改为由该通知驱动。
+- The host provides a unified subscription to page changes or a render-phase hook: the observation bus and the frame pipeline connect to the host's.
+- The host opens a replaceable scroll-follow strategy: the follow part registers with the host, and only the skin's own jumps and transitions stay here.
+- The host can report that a session switch is complete, or provides an awaitable render phase: the batch-weight threshold decision is driven by that notification.

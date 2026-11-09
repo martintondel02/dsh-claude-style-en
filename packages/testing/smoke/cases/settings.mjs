@@ -1,4 +1,8 @@
+import fs from 'node:fs'
 import { BAND_ANIMATION, check, basicChecks, commonChecks } from './_shared.mjs'
+
+/** The repository the plugin's own heading links to, read from the package manifest. */
+const REPOSITORY = JSON.parse(fs.readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8')).repository.url.replace(/^git\+/, '').replace(/\.git$/, '')
 
 export default {
   'late-forms'(r) {
@@ -124,7 +128,7 @@ export default {
     const link = settings.link || {}
     const mark = settings.mark || {}
     check('the heading carries the plugin\'s repository link, opening in a new tab with an accessible name',
-      link.href === 'https://github.com/Nwflower/dsh-claude-style' && link.target === '_blank' &&
+      link.href === REPOSITORY && link.target === '_blank' &&
         (link.rel || '').includes('noopener') && typeof link.label === 'string' && link.label.length > 0,
       JSON.stringify(link))
     check('the link\'s mark is the inlined asset, painted as a mask in the quiet ink',
@@ -245,21 +249,21 @@ export default {
       JSON.stringify(dateView))
     const archivedView = view.archived || {}
     const activeView = view.active || {}
-    check('the 已归档 segment drives the host\'s own view: archived rows alone in one flat list, and the segment checked',
+    check('the Archived segment drives the host\'s own view: archived rows alone in one flat list, and the segment checked',
       archivedView.snapshot?.archivedFilter === 'only' && archivedView.snapshot?.groupBy === 'flat' &&
         archivedView.checked === 'true',
       JSON.stringify(archivedView))
-    check('the 进行中 segment puts the filter back with the date view\'s own flat list standing before the visit, and stands checked again',
+    check('the Active segment puts the filter back with the date view\'s own flat list standing before the visit, and stands checked again',
       activeView.snapshot?.archivedFilter === 'default' && activeView.snapshot?.groupBy === 'flat' &&
         activeView.checked === 'true',
       JSON.stringify(activeView))
     const flatView = sw.flat || {}
-    check('a 单列表 pick in the host\'s own view menu stands, and 已归档 brings it back instead of dropping it',
+    check('a Flat list pick in the host\'s own view menu stands, and Archived brings it back instead of dropping it',
       flatView.picked?.snapshot?.groupBy === 'flat' && flatView.archived?.snapshot?.groupBy === 'flat' &&
         flatView.active?.snapshot?.groupBy === 'flat',
       JSON.stringify(flatView))
     const reinstall = sw.reinstall || {}
-    check('a store left on 已归档 comes back on that segment when the feature installs again',
+    check('a store left on Archived comes back on that segment when the feature installs again',
       reinstall.snapshot?.archivedFilter === 'only' && reinstall.snapshot?.groupBy === 'flat' &&
         reinstall.checked === 'true',
       JSON.stringify(reinstall))

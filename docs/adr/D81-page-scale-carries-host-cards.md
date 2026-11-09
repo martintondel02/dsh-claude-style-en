@@ -1,29 +1,29 @@
-# D81. 页面缩放留在样式表，宿主的浮层拿回一像素对一像素的空间
+# D81. Page zoom stays in the stylesheet; the host's floating cards get back a one-pixel-to-one-pixel space
 
-## 背景
+## Background
 
-「页面缩放」这个设置项由主题样式表在 `<body>` 上写 `zoom`。写在元素上的 `zoom` 把它的子树按倍数放大，而 `getBoundingClientRect()` 仍按视口自身的像素回答：同一个长度在两处相差一个倍数。皮肤自己的浮层在写出位置之前先除以这个倍数，因此落点正确；宿主自己的浮层把量到的矩形直接写进固定的 `left` 与 `top`，于是被再乘一次，落在离那一行一个倍数远的地方。
+The "Page zoom" setting is written by the theme stylesheet as `zoom` on `<body>`. A `zoom` written on an element scales its subtree by the factor, while `getBoundingClientRect()` still answers in the viewport's own pixels: the same length differs by that factor between the two places. The skin's own floating cards divide by the factor before writing a position, so they land correctly; the host's own floating cards write the measured rectangle straight into fixed `left` and `top`, so they are multiplied once more and land a factor away from the row.
 
-还有一层：宿主量它自己的卡片用的是页面像素，量它挂靠的那一行用的是视口像素。菜单按自身高度开在触发控件上方时，宿主算的是「触发控件的上沿减去卡片高度再减间距」，卡片高度少算了这个倍数，菜单因此压在触发控件上，压住的高度正是卡片高度的这一份。缩放倍数越大，压得越多。
+There is another layer: the host measures its own cards in page pixels and the row it hangs from in viewport pixels. When a menu opens above its trigger by its own height, the host computes "the trigger's top edge minus the card's height minus the gap", with the card height undercounted by that factor, so the menu sits on top of the trigger, by exactly that share of the card's height. The larger the factor, the more it presses.
 
-真正没有这些问题的做法是浏览器自己的页面缩放：它改变布局视口的尺寸，矩形与写入的长度处在同一个空间。渲染进程拿不到它——没有 Electron 模块，`dshDesktop` 只暴露浏览器面板、键盘、快捷键与更新，宿主客户端也没有缩放服务。要走这条路得先由桌面外壳开放一个缩放接口，这个设置项也只能留给桌面端。
+The way that truly avoids this is the browser's own page zoom: it changes the size of the layout viewport, so rectangles and written lengths are in the same space. The renderer process cannot reach it — there is no Electron module, `dshDesktop` exposes only the browser panel, keyboard, shortcuts and updates, and the host client has no zoom service either. That route would need the desktop shell to open a zoom interface first, and this setting would also have to stay desktop-only.
 
-## 决定
+## Decision
 
-- 页面缩放继续由样式表的 `zoom` 给出。
-- 宿主自己的浮层拿回一像素对一像素的空间：在卡片上写 `zoom: 1 / 倍数`，让它的子树按页面倍数画一次、再被卡片自己的倍数除回来。这样宿主写下的长度与宿主量到的盒子在屏幕上就是同一个长度，它按自身高度算出的位置随之成立。
-- 只处理 `<body>` 的直接子节点中、自带内联 `left` 与 `top`、`position` 为 `fixed` 或 `absolute` 的节点：宿主按量到的矩形写位置时才会混用两个空间，样式表自己摆位的浮层不需要。皮肤自己的浮层已被排除，它写出位置前已经除过倍数。
-- 宿主每次改写 `left`、`top` 时重算；设置变化时重算全部；卸载或页面不再缩放时把每张卡片交回。
-- 页面自身的尺寸写成两个自定义属性（`--dsh-claude-page-height`、`--dsh-claude-page-width`），供按窗口给卡片封顶的规则读取；`vh`、`vw` 在缩放后的页面里是窗口尺寸再乘一次倍数，用它封顶的卡片会比窗口更高或更宽。
-- 倍数不为 1 时，`<body>` 取这两个长度作为自己的宽高，页面本身不滚动：以视口单位或按窗口量出的数字写下的盒子会在窗口之外多出一段空白可滚区，body 停在窗口的尺寸之后，窗口的边缘就是页面的边缘，窗口以外不再有可滚动的空白。
+- Page zoom continues to come from the stylesheet's `zoom`.
+- The host's own floating cards get back a one-pixel-to-one-pixel space: write `zoom: 1 / factor` on the card, so its subtree is painted once at the page's factor and divided back out by the card's own factor. The lengths the host writes and the boxes the host measured are then the same length on screen, and the position it computes from its own height holds.
+- Handle only nodes that are direct children of `<body>`, carry inline `left` and `top` of their own, and have `position` `fixed` or `absolute`: the host mixes the two spaces only when it writes a position from a measured rectangle, and a floating card the stylesheet places itself does not need this. The skin's own floating cards are excluded already; they divide by the factor before writing a position.
+- Recompute each time the host rewrites `left` or `top`; recompute all of them when settings change; hand each card back on uninstall or when the page is no longer scaled.
+- The page's own size is written as two custom properties (`--dsh-claude-page-height`, `--dsh-claude-page-width`) for rules that cap a card against the window; `vh` and `vw` in a scaled page are the window's size multiplied once more, and a card capped with them would be taller or wider than the window.
+- When the factor is not 1, `<body>` takes these two lengths as its own width and height, and the page itself does not scroll: boxes written in viewport units or measured against the window would leave a stretch of scrollable blank beyond the window, and with the body stopped at the window's size, the window's edge is the page's edge and there is no scrollable blank beyond it.
 
-## 后果
+## Consequences
 
-- 放弃的做法：把 `zoom` 换成 `transform: scale` 会让固定定位改而锚定在被变换的祖先上，落点同样错误；重写宿主自己的 `left`、`top` 会被宿主下一帧覆盖；只抵消重复放大（写一段反向位移）能让画出的尺寸仍随缩放放大，但按自身高度算出的位置照旧差着卡片高度的这一份，因为宿主量的是另一个空间；在反向位移之上再用 `transform: scale` 把画面放大回去，又会把这份误差带回来，宿主读的 `offsetHeight` 是不含变换的那个数。
-- 这样交回的卡片保持宿主设计的尺寸，不随页面缩放变大或变小。它的落点与它自己的封顶都以窗口为准，这是宿主写这些数字时用的空间。
-- 皮肤自己的浮层不受影响：它们由皮肤按页面自身的像素摆放，尺寸随缩放放大。
+- The abandoned approach: replacing `zoom` with `transform: scale` makes fixed positioning anchor to the transformed ancestor instead, landing wrong the same way; rewriting the host's own `left` and `top` is overwritten by the host on the next frame; cancelling only the repeated magnification (writing a counter-offset) leaves the painted size still growing with the scale, while a position computed from the card's own height is still off by that share of the height, because the host measured in the other space; adding `transform: scale` on top of the counter-offset to magnify the picture back brings that error back, since the `offsetHeight` the host reads is the number without the transform.
+- A card handed back this way keeps the size the host designed and does not grow or shrink with page zoom. Its position and its own cap both go by the window, which is the space the host used to write those numbers.
+- The skin's own floating cards are unaffected: the skin places them in the page's own pixels, and their size grows with the scale.
 
-## 重审条件
+## Reconsider when
 
-- 宿主把它自己浮层的位置统一写在一个空间里，或按页面缩放换算时，这里的处理退场。
-- 桌面外壳向页面开放真正的页面缩放接口时，设置项改走该接口，这套处理随之下线。
+- When the host writes its own floating cards' positions in one space, or converts for page zoom, this handling retires.
+- When the desktop shell opens a real page-zoom interface to the page, the setting uses that interface and this handling goes away with it.

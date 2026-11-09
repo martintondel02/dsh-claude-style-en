@@ -5,7 +5,7 @@ export default {
   order: 110,
   reads: ['model'],
   contracts: [],
-  ungated: '模型选择器的设置项，不在界面上出现',
+  ungated: 'A settings row of the model picker; it draws nothing on the page',
   stylesheets: [],
   cases: ['settings']
 } satisfies FeatureManifest

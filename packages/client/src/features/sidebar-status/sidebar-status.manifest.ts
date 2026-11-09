@@ -3,7 +3,7 @@ import type { FeatureManifest } from '../../core/feature'
 export default {
   id: 'sidebarStatus',
   order: 153,
-  ungated: '侧栏原生状态显示在行首或行尾，状态本身仍由宿主管理',
+  ungated: 'The native sidebar status shows at the head or the tail of the row; the status itself stays the host\'s',
   contracts: ['shell.sidebar-slot', 'session.phase', 'workspace.leading-outlet'],
   stylesheets: [{ file: 'sidebar-status.css', rank: 117 }],
   /**

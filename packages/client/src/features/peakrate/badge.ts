@@ -37,7 +37,7 @@ export function rateName(period: RatePeriod) {
   return copy(NAMES[period])
 }
 
-/** `峰价 2×`, in one string: the state's name and the multiplier the source prints. */
+/** `Peak rate 2×`, in one string: the state's name and the multiplier the source prints. */
 function rateText(period: RatePeriod, badge: string) {
   return `${rateName(period)} ${badge}`.trim()
 }

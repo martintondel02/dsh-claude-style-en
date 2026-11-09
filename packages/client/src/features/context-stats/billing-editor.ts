@@ -5,7 +5,7 @@ import { registerPopover, unregisterPopover } from '../../shared/popover'
 import { copy } from './copy'
 
 /**
- * The custom price table's editor (the settings page's "编辑" button).
+ * The custom price table's editor (the settings page's "Edit" button).
  *
  * A modal card on `<body>` rather than inside the settings dialog: the dialog
  * clips and may transform its own subtree, and a card standing over the window
@@ -73,7 +73,7 @@ export function openBillingEditor(entries: readonly string[], currency: string, 
   card.className = 'dsh-claude-billing-card'
   card.setAttribute('role', 'dialog')
   card.setAttribute('aria-modal', 'true')
-  card.setAttribute('aria-label', '自定义计费表')
+  card.setAttribute('aria-label', copy('billingTableTitle'))
   document.body.append(card)
   openCard = card
   card.addEventListener('pointerdown', event => event.stopPropagation())

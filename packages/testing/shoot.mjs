@@ -47,7 +47,7 @@ const WIDTH = 1440
 const HEIGHTS = { home: 900, conversation: 1240 }
 
 /** The conversation scene's only admissible user message, and its session's default title. */
-const DEMO_PROMPT = '用一段简短的示例，展示你支持的 Markdown 格式。'
+const DEMO_PROMPT = 'Show off the Markdown formats you support with a short example.'
 const DEMO_TITLE = 'Markdown rendering tour'
 
 /**
@@ -58,7 +58,7 @@ const DEMO_TITLE = 'Markdown rendering tour'
  */
 const CANVAS = {
   claude: { light: 'rgb(255, 255, 255)', dark: 'rgb(25, 25, 25)' },
-  deepseek: { light: 'rgb(255, 255, 255)', dark: 'rgb(19, 22, 29)' },
+  deepseek: { light: 'rgb(251, 252, 255)', dark: 'rgb(19, 22, 29)' },
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

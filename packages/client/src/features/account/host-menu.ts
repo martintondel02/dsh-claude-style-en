@@ -61,7 +61,7 @@ export function createHostAccountMenu(options: { close(): void }) {
 
   /**
    * The host's settings button, a dialog trigger in the footer, or null. The
-   * desktop has none: its account menu took that slot and carries 设置
+   * desktop has none: its account menu took that slot and carries Settings
    * itself, and "any button that is not a menu anchor" there is the update
    * pill beside it — the settings row read "Retry update" and clicked it. The
    * account trigger matches the settings area's own shape, so it is turned

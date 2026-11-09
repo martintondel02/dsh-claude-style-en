@@ -39,7 +39,7 @@ body[data-dsh-claude-style] [data-dsh-view-tabs] [data-conversation-tabs] {
   position: relative;
   /* A view switcher, not furniture: it fades in when the pointer is in the
      conversation pane and out when it leaves, the same idiom as the sidebar's
-     进行中 / 已归档 control. Opacity, not display, so the header keeps its height
+     Active / Archived control. Opacity, not display, so the header keeps its height
      and the actions beside it never move. */
   opacity: 0;
   transition: opacity var(--dsh-claude-duration-surface) var(--dsh-claude-ease-standard);

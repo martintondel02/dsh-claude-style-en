@@ -5,7 +5,7 @@ export default {
   order: 100,
   reads: ['composer'],
   contracts: ['shell.menu'],
-  ungated: '跟随输入框改造的首页范围',
+  ungated: 'The home area that follows the composer rework',
   stylesheets: [{ file: 'hero-menu.css', rank: 280, gate: true }],
   cases: ['popovers']
 } satisfies FeatureManifest

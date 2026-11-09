@@ -78,19 +78,19 @@ function streamJitterScenario({ check }, statsPosition = 'context') {
       const seatDrift = boxDrift(frames, 'seat')
       const statsDrift = boxDrift(frames, 'stats')
       return [
-        check('逐帧采样真的在跑', trace.length > 60 && frames.length > 40, `${trace.length} frames, ${frames.length} scrolled while following`),
-        check('回答在采样期间长出来', grew > GROWTH_PX, `grew ${grew}px`),
-        check('消息列在相邻两帧之间没有往下走', bounces.length === 0, `downward frames=${bounces.length} of ${walked.length}, worst ${worst === -Infinity ? 'n/a' : `${worst}px`}${bounces.length === 0 ? '' : ` at ${bounces.slice(0, 4).map((move) => `${move.by}px/${move.at}ms`).join(' ')}`}`),
+        check('the frame sampling really runs', trace.length > 60 && frames.length > 40, `${trace.length} frames, ${frames.length} scrolled while following`),
+        check('the answer grows during the sampling', grew > GROWTH_PX, `grew ${grew}px`),
+        check('the message column never moves down between two frames', bounces.length === 0, `downward frames=${bounces.length} of ${walked.length}, worst ${worst === -Infinity ? 'n/a' : `${worst}px`}${bounces.length === 0 ? '' : ` at ${bounces.slice(0, 4).map((move) => `${move.by}px/${move.at}ms`).join(' ')}`}`),
         // The other half of the reading: a column that never moved would pass the
         // check above without the slide doing anything at all. Pieces arrive
         // faster than frames, so many frames stand still; a third is the floor
         // under a stream that is visibly walking upward on this recording.
-        check('跟随期间消息列在向上走', rising.length > walked.length / 3, `${rising.length} of ${walked.length} moves are upward`),
-        check('连续输出期间输入卡片不上下移动', cardDrift !== null && cardDrift <= COMPOSER_DRIFT_PX, `${statsPosition}: card drift ${cardDrift}px`),
-        check('连续输出期间输入区与底栏不上下移动', seatDrift !== null && seatDrift <= COMPOSER_DRIFT_PX &&
+        check('the message column walks upward while following', rising.length > walked.length / 3, `${rising.length} of ${walked.length} moves are upward`),
+        check('the composer card does not move up or down while the answer streams', cardDrift !== null && cardDrift <= COMPOSER_DRIFT_PX, `${statsPosition}: card drift ${cardDrift}px`),
+        check('the composer and footer do not move up or down while the answer streams', seatDrift !== null && seatDrift <= COMPOSER_DRIFT_PX &&
           (statsPosition === 'context' || (statsDrift !== null && statsDrift <= COMPOSER_DRIFT_PX)),
         `${statsPosition}: seat drift ${seatDrift}px, stats drift ${statsDrift}px`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

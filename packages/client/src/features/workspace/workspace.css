@@ -1,10 +1,10 @@
-/* ---------- Workspace section: 进行中 / 已归档 segments ---------- */
+/* ---------- Workspace section: Active / Archived segments ---------- */
 /* The segment control and the archived row action dress the host's own
    workspace browser under the marks packages/client/src/features/workspace/workspace-view.ts
    writes; sidebar-adjacent, but split from theme/sidebar.css when that file
    neared the 750-line stop line. */
 
-/* ---------- workspace section: 进行中 / 已归档 ---------- */
+/* ---------- workspace section: Active / Archived ---------- */
 /* The section label gives way to a two-state segment control (the skin's own
    markup, built by packages/client/src/features/workspace/workspace-view.ts);
    the two segments are the host's own archived filter, so the tree below the
@@ -12,10 +12,10 @@
    opacity further down.
    The control's look is the shared small segment look (shared/segment-control.css);
    this sheet keeps its placement over the label and the crossfade.
-   The control is a mode switch, not furniture: while 进行中 is the state it steps
-   aside for the plain 工作区 heading and comes back as soon as the pointer is in
-   the section — the header itself or the tree below it. In 已归档 it stays put,
-   because it is the way back.
+   The control is a mode switch, not furniture: while Active is the state it steps
+   aside for the plain Workspaces heading and comes back as soon as the pointer is
+   in the section — the header itself or the tree below it. In Archived it stays
+   put, because it is the way back.
    The two swap by opacity rather than display, so they cross-fade; the control
    is laid over the label's own slot (absolute, same 16px) so neither the header's
    height nor the actions' position moves while they swap. */
@@ -69,8 +69,8 @@ body[data-dsh-claude-style] .dsh-claude-ws-segment {
 body[data-dsh-claude-style] .dsh-claude-ws-segment:hover {
   color: var(--dsw-alias-label-primary, #161616);
 }
-/* ---------- 已归档: the skin's own page of the archive ---------- */
-/* The 已归档 segment is the skin's own list (archived-list.ts), not the host's
+/* ---------- Archived: the skin's own page of the archive ---------- */
+/* The Archived segment is the skin's own list (archived-list.ts), not the host's
    tree: the host would mount every archived conversation at once, which is what
    slows the section down once the archive holds hundreds. While the segment
    stands the host's own list area stays hidden and the section's rows are the

@@ -102,7 +102,7 @@ body[data-dsh-claude-style] .dsh-claude-effort[data-dsh-claude-effort-swap-reset
   transition: none;
 }
 /* The ends name the axis: a scale, not a value, so they keep the caption colour
-   and take their words from the copy table (更快 / 更强 in Chinese). */
+   and take their words from the copy table (Faster / Smarter in English). */
 body[data-dsh-claude-style] .dsh-claude-effort-ends {
   display: flex;
   align-items: center;

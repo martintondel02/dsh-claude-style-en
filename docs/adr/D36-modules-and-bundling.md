@@ -1,27 +1,27 @@
-# D36. TypeScript、esbuild 与零运行时依赖
+# D36. TypeScript, esbuild and zero runtime dependencies
 
-- **取代**：D1
+- **Replaces**: D1
 
-## 背景
+## Background
 
-宿主加载器只接受单文件产物，既不提供相对导入，也不提供资源地址。早期的构建靠手工拼接片段维持依赖顺序，源码与片段增多之后已经难以看清，构建脚本本身也越来越像一个手写的打包器。
+The host loader accepts only a single-file artifact and provides neither relative imports nor asset addresses. The early build held dependency order together by concatenating fragments by hand; as sources and fragments multiplied it became hard to follow, and the build script itself came to look more and more like a handwritten bundler.
 
-## 决定
+## Decision
 
-- 源码一律是带类型的模块，用显式导入与导出表达依赖；类型检查在严格模式下开启，并且是构建的一步。
-- 构建检查打包后的导入图：漏引、循环依赖、使用尚未初始化的常量，以及没有任何模块导入的源文件，都在构建时失败。
-- 用打包器产出宿主加载器要求的单文件产物：压缩、附映射文件，运行时依赖全部外部化，由宿主提供。
-- 宿主服务与快照里的值在契约模块给出类型之前，统一按未知值书写；其余类型写全。
-- 构建时才有的数据（样式表文本、品牌标记、资源地址、构建编号）经一个生成模块进入源码，类型另有声明。
-- 清单声明延后加载的功能各自成块，不进入主体产物。
-- 原有的构建检查各有去处：注册表与开关由功能清单的类型保证，样式规则与门控在语法树上执行，文案结构用模式校验，资源对应关系交给资源清单生成。
+- All source is typed modules, expressing dependencies through explicit imports and exports; type checking runs in strict mode and is a step of the build.
+- The build checks the bundled import graph: a missing import, a cycle, a constant used before it is initialized, and a source file no module imports all fail the build.
+- A bundler produces the single-file artifact the host loader requires: minified, with a map file, and every runtime dependency externalized and provided by the host.
+- Host services and values from snapshots are written as unknown values until the contracts module gives them a type; every other type is written out in full.
+- Build-time-only data (stylesheet text, brand marks, asset addresses, the build id) enters the source through one generated module, with its types declared separately.
+- Features whose manifests declare deferred loading each form a chunk and stay out of the main artifact.
+- The old build checks each have a home: the registry and switches are guaranteed by the feature manifest's type, style rules and gating run on the syntax tree, copy structure is checked by a schema, and the asset correspondence goes to the asset manifest generator.
 
-## 后果
+## Consequences
 
-- 开发依赖多出类型检查器、打包器与校验库；产物里的名字被压缩，排查线上问题依赖映射文件。
-- 未给出类型的那部分宿主值不受类型检查，宿主结构改变仍要靠冒烟与真实实例发现。
-- 构建脚本不必再自己拼接片段、推断依赖顺序。
+- The dev dependencies grow by a type checker, a bundler and a validation library; names in the artifact are minified, so diagnosing a problem in the field depends on the map file.
+- The host values left untyped are outside type checking, so a structural host change still has to be caught by the smoke and a real instance.
+- The build script no longer has to concatenate fragments or infer dependency order itself.
 
-## 重审条件
+## Reconsider when
 
-- 宿主加载器原生支持模块的相对导入与资源地址时，产物改为按模块与资源分发。
+- The host loader natively supports relative imports of modules and asset addresses: ship the artifact as modules and assets.

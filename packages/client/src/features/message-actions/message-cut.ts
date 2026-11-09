@@ -21,33 +21,34 @@ import {
 import type { HostContext } from '@dsh-claude-style/engine/host'
 
 /**
- * 一条读者消息在会话日志里的位置，以及从它前面分岔出去的两种动作。
+ * A reader message's position in the conversation log, and the two actions that fork away in front of it.
  *
- * 宿主没有原地截断会话的接口：会话控制器给出的是 `fork`，从某个事件为止的
- * 前缀复制成新会话（宿主自己的分支按钮就走这条路）。所以「撤回」和「编辑」
- * 都是先在消息前一个事件处分岔 —— 原会话一个事件都不动；撤回把原文放回新
- * 会话的输入框，编辑把改过的文字直接在里面发出去。
+ * The host offers no way to truncate a conversation in place: the session controller gives `fork`, which
+ * copies the prefix up to an event into a new session (the host's own branch button takes that path). So
+ * "retract" and "edit" both fork in front of the message's preceding event — the original session loses
+ * no event; retract puts the original text back into the new session's composer, and edit sends the
+ * changed text straight from there.
  */
 
-/** 分岔之后等新会话挂上输入框的上限：宿主要先建会话、再把它的绑定交给页面。 */
+/** The cap on waiting for the new session to bind its composer after a fork: the host creates the session first and hands its binding to the page afterwards. */
 const DRAFT_SEED_WAIT_MS = 4000
-/** 两次查看绑定之间的间隔。 */
+/** The interval between two looks at the binding. */
 const DRAFT_SEED_POLL_MS = 60
 
-/** 一条读者消息：它所在的会话、它的事件序号、它发出的正文，以及那一轮是否还在跑。 */
+/** One reader message: its session, its event sequence number, the text it sent, and whether that turn is still running. */
 export interface ReaderMessage {
   sessionId: string
-  /** 消息事件的序号，分岔的边界取它前一个。 */
+  /** The message event's sequence number; the fork boundary takes the one before it. */
   seq: number
-  /** 消息正文，图片与文件附件不在其中。 */
+  /** The message text, with image and file attachments left out. */
   text: string
   /**
-   * 消息带着图片或文件附件。附件是浏览器为一次发送上传的草稿，正文里只留下
-   * 投递凭证，重新放进输入框或重新发出都会丢掉它们，所以这种消息不提供撤回
-   * 与编辑。
+   * The message carries image or file attachments. An attachment is a draft the browser uploads for one
+   * send, and only its delivery token stays in the text; putting it back into the composer or sending it
+   * again loses it, so this message offers neither retract nor edit.
    */
   attachments: boolean
-  /** 那一轮还没结束：撤回与编辑要等它停下。 */
+  /** The turn has not ended: retract and edit wait for it to stop. */
   open: boolean
 }
 
@@ -62,7 +63,7 @@ function textOf(content: unknown): string {
   return text
 }
 
-/** 是否有正文以外的块：图片、文件，以及宿主将来加的任何一种。 */
+/** Whether there are blocks other than text: images, files, and any kind the host adds later. */
 function carriesAttachments(content: unknown): boolean {
   if (!Array.isArray(content)) return false
   return content.some((block) => {
@@ -73,8 +74,9 @@ function carriesAttachments(content: unknown): boolean {
 
 
 /**
- * 读一条消息行对应的会话节点。行的 `data-chat-node-key` 与快照里节点的 key
- * 是同一个 key，节点自己的 `seq` 就是这条消息到达时的事件序号。
+ * Read the conversation node a message row stands for. The row's `data-chat-node-key` is the same key
+ * the snapshot's nodes carry, and the node's own `seq` is the event sequence number at which this
+ * message arrived.
  */
 export function readerMessageOf(ctx: HostContext, row: Element): ReaderMessage | null {
   const session = closestConversationSession(row)
@@ -121,11 +123,12 @@ export function answerPromptOf(ctx: HostContext, row: Element): ReaderMessage | 
 }
 
 /**
- * 把 `text` 放进新会话的输入框并等它真的落到那里；`send` 为真时接着用宿主的
- * 提交动作发出去（与编辑器里按 Enter 同一个入口）。
+ * Put `text` into the new session's composer and wait until it really lands there; when `send` is true,
+ * send it through the host's submit action (the same entry the editor's Enter takes).
  *
- * 分岔刚返回时会话可能还没绑定到页面，读不到它的输入框；这里按固定间隔再看，
- * 到上限还没有就抛出 —— 分岔已经把消息切掉了，读者的文字不能悄悄不见。
+ * Right after a fork returns, the session may not be bound to the page yet, and its composer cannot be
+ * read; this looks again at a fixed interval and throws at the cap — the fork has already cut the
+ * message away, and the reader's text must not disappear silently.
  */
 async function seedDraft(ctx: HostContext, sessionId: string, text: string, send: boolean): Promise<void> {
   const deadline = Date.now() + DRAFT_SEED_WAIT_MS
@@ -149,10 +152,10 @@ async function seedDraft(ctx: HostContext, sessionId: string, text: string, send
 }
 
 /**
- * 在消息前一个事件处分岔，打开新会话，把 `text` 放进它的输入框；`send` 为真
- * 时直接发出，读者看到的就是这条消息在新会话里重发了一次。
+ * Fork in front of the message's preceding event, open the new session, and put `text` into its composer;
+ * when `send` is true, send it at once, so what the reader sees is this message sent again in the new session.
  *
- * 新会话的标题接着原会话（`increaseTitle`），与宿主自己的分支按钮一致。
+ * The new session's title continues the original's (`increaseTitle`), matching the host's own branch button.
  */
 export async function rewindTo(ctx: HostContext, message: ReaderMessage, text: string, send: boolean): Promise<void> {
   if (message.seq <= 0) throw new Error('message-actions: no event precedes the message to fork at')

@@ -1,32 +1,32 @@
-# D78. 改写宿主与插件的昂贵样式规则
+# D78. Rewrite the host's and plugins' expensive style rules
 
-## 背景
+## Background
 
-宿主的对话流样式里有几条间距规则用 `:has()` 判断一个流条目是否为空，再经兄弟组合子把这一判断传给其后的条目；这几条规则的主体（最后一段）是「一个不隐藏、也不为空的条目」，这一段没有类名、标签或属性可供浏览器分桶，页面上每个元素都要拿它去试。浏览器从最后一段开始匹配，于是每次插入都要拿整页去试这几条规则，长会话里样式重算的单价随之上涨，皮肤与宿主在同一帧里任何一次读布局都要付这笔钱。宿主没有为这类规则提供开关。
+In the host's conversation-stream styles a few spacing rules use `:has()` to decide whether a stream item is empty, then pass that decision on to the items after it through sibling combinators; the subject (the last compound) of these rules is "an item that is neither hidden nor empty", which carries no class name, tag or attribute for the browser to bucket by, so every element on the page has to be tried against it. The browser matches from the last compound, so every insertion tries the whole page against these rules, the unit cost of a style recalculation in a long conversation rises with it, and any layout read by the skin and the host in the same frame pays that bill. The host offers no switch for rules of this kind.
 
-## 决定
+## Decision
 
-- 皮肤提供一个实验性的改写，名为钠：开关打开时，适配表里登记的规则在原样式表里就地改写选择器，让浏览器能给它们分桶；关闭时选择器原样写回、皮肤写的标记全部撤下，页面回到宿主自己的样子。
-- 适配表按成员组织。宿主本体的界面由内置插件提供、随宿主一同发版，它与其他插件同等地作为一个成员：每个成员写明自己的版本从哪里读、从哪一版开始适配（更高的版本自动包含）以及它的适配项；每个适配项写明样式表（加载器标在样式节点上的包名与路径）、它认得的规则，以及维护兜底标记的脚本。版本读不到的成员不参与改写。
-- 表里写的是整条选择器：浏览器序列化出来的样子，带哈希的类名按角色占位，第一次出现时捕获，之后必须是同一个类名。差一个字就匹配不上，规则保持原样；宿主改了规则，页面上留下的就是宿主自己的规则。
-- 改写只动主体：把它按宿主在创建元素时就写上的键展开成并列的几支——流块、运行行、提交回显、插话气泡、流槽，各登记在宿主契约里——浏览器按这些键分桶，只拿这些元素去试。元素一插入就带着键，宿主在同一个任务里插入节点又同步读布局时，改写后的规则与原规则读到的是同一组元素。规则里的结构判断（空条目、隐藏）原样留给浏览器实时判定。
-- 宿主或别的插件放进流里的其他种类，由脚本写在流容器每个子元素上的标记兜底：它是并列的最后一支，在变化观察的回调里写上，这类元素在插入它的那个任务里暂时不带间距。
-- 替换与原规则等价：对同一棵树命中同一组元素，优先级相同。每一支的键只出现在流容器的子元素上；为补上键占去的那一份优先级，并列的否定条件合进同一个 `:not()`，它只计其中最重的一项。
-- 开关默认关闭，偏好的初值是「未决定」。读到用户设置之后的探测里，适配表一有规则命中，就替用户打开；用户拨过一次开关，偏好就有了明确的取值，探测不再改它。
-- 设置项的小字只报告生效中的规则条数，悬停列出每一条规则的来源与声明，供维护时对照。
+- The skin offers an experimental rewrite called Sodium: with the switch on, rules registered in the adaptation table have their selectors rewritten in place in the original stylesheet so the browser can bucket them; with it off, the selectors are written back as they were, every marker the skin wrote is withdrawn, and the page returns to the host's own look.
+- The adaptation table is organized by member. The host's own interface is provided by built-in plugins shipped with it, and it is a member like any other: each member states where its version is read from, the version from which adaptation starts (higher versions are included automatically) and its adaptation entries; each entry states the stylesheet (the package name and path the loader marks on the style node), the rules it recognizes, and the script that maintains the fallback markers. A member whose version cannot be read takes no part in the rewrite.
+- The table holds the whole selector: the form the browser serializes, with hashed class names replaced by role placeholders captured on first appearance and required to be the same class name afterwards. One character off and it does not match, and the rule stays as it was; when the host changes the rule, what stays on the page is the host's own rule.
+- The rewrite touches only the subject: it is expanded into several parallel branches by the keys the host writes when it creates the element — stream block, running row, submit echo, interjection bubble, stream slot, each registered in the host contract — and the browser buckets by those keys and tries only those elements. An element carries its key from the moment it is inserted, so when the host inserts a node and reads layout synchronously in the same task, the rewritten rule and the original read the same set of elements. The structural decisions inside the rule (empty item, hidden) are left to the browser to decide live.
+- Other kinds the host or another plugin puts into the stream are covered by markers a script writes on every child of the stream container: that is the last parallel branch, written in the change observer's callback, and such elements temporarily carry no spacing in the task that inserts them.
+- A replacement is equivalent to the original rule: it matches the same set of elements on the same tree, at the same specificity. Each branch's key appears only on children of the stream container; to make up for the specificity the key adds, the parallel negations are merged into one `:not()`, which counts only the heaviest of them.
+- The switch is off by default, and the preference's initial value is "undecided". In the probe after the user's settings are read, one rule in the adaptation table matching turns it on for the user; once the user has flipped the switch, the preference has an explicit value and the probe no longer changes it.
+- The settings item's small print reports only the number of rules in force, and hovering lists each rule's source and declarations for maintenance comparisons.
 
-## 后果
+## Consequences
 
-- 开关打开时，宿主或插件的样式表与它们作者写下的样子不再一一对应；排查样式问题前先关掉开关。
-- 适配一条新规则要同时写出它的整条选择器、替换写法与它依赖的宿主契约，并由规格核对两者在同一棵树上命中同一组元素、在层叠里分量相同，包括节点在同一个任务里改动之后、任何观察者运行之前的那一刻。
-- 主体本来就能分桶的规则（按条目类名分桶的空条目折叠、按分隔线类名分桶的运行行分隔线）开销本来就小，不进表。
-- 宿主每次改动这些规则，表里对应的一条就失效，要按新的写法重新登记；宿主给流里加了新种类的子元素，要把它的键补进主体的分支，否则它只能等兜底标记。
-- 改写作用在样式表对象上，同一份样式被重新注入（热更新）时改写随旧对象一起丢失，皮肤要监视 `<head>` 并对新对象重新匹配。
-- 放弃的方案：在皮肤样式表里写更高优先级的规则盖住宿主的声明。盖住之后浏览器照样要求值原规则，开销没有减少。
-- 放弃的方案：删除原规则、插入改写后的副本。删除与插入改变规则的下标，关闭时要按记下的位置插回，而宿主自己的增删会让记下的位置失效。
-- 放弃的方案：只用脚本写的标记收窄主体，或把空条目判断换成脚本写的属性。标记与属性都要等变化观察的回调才更新，宿主在回合结束时撤下运行行、插入新条目后在同一个任务里读布局，读到的内容比原规则下短，滚动位置被浏览器夹回一截。
+- With the switch on, the host's and plugins' stylesheets no longer correspond one-to-one to what their authors wrote; turn the switch off before investigating a style problem.
+- Adapting a new rule means writing its whole selector, its replacement and the host contract it depends on, with a spec checking that the two match the same set of elements on the same tree and carry the same weight in the cascade, including the moment after a node changes in the same task and before any observer runs.
+- Rules whose subjects can already be bucketed (empty-item collapse by item class name, running-row divider by divider class name) are cheap already and do not enter the table.
+- Every time the host changes these rules, the corresponding entry in the table stops working and has to be registered again against the new form; when the host adds a new kind of stream child, its key has to join the subject's branches, or it only waits for the fallback marker.
+- The rewrite acts on the stylesheet object, so when the same styles are injected again (hot reload) the rewrite is lost with the old object, and the skin has to watch `<head>` and re-match the new object.
+- Abandoned: writing higher-specificity rules in the skin's stylesheet to override the host's declarations. Even overridden, the browser still has to evaluate the original rule for the value, so the cost does not fall.
+- Abandoned: deleting the original rule and inserting a rewritten copy. Deleting and inserting changes rule indices, so turning the rewrite off would have to insert back at a recorded position, and the host's own additions and deletions invalidate that position.
+- Abandoned: narrowing the subject with script-written markers alone, or replacing the empty-item decision with a script-written attribute. Markers and attributes only update in the change observer's callback; when the host withdraws the running row at the end of a turn and inserts a new item and then reads layout in the same task, the content it reads is shorter than under the original rule, and the browser clamps the scroll position back a stretch.
 
-## 重审条件
+## Reconsider when
 
-- 宿主修掉这些规则，或为流条目提供可分桶的属性时，对应的适配项删除。
-- 浏览器对这类结构选择器的匹配与失效成本降到与普通属性选择器相当时，整个功能删除。
+- When the host fixes these rules, or provides a buckettable attribute for stream items, the corresponding adaptation entry is deleted.
+- When the browser's cost of matching and invalidating structural selectors of this kind falls to that of an ordinary attribute selector, the whole feature is deleted.

@@ -103,7 +103,7 @@ export const HOME_RANGES: { id: string, labelKey: CopyKey, days: number }[] = [
   { id: '7d', labelKey: 'homeRange7d', days: 7 },
 ]
 
-/** The short day-label formatter, in the shell's language: "Aug 26", "8月26日". */
+/** The short day-label formatter, in the shell's language: "Aug 26". */
 export function homeShortDateFormat() {
   return new Intl.DateTimeFormat(activeLocale(), { month: 'short', day: 'numeric' })
 }
@@ -128,7 +128,7 @@ export function formatHomeCount(count: unknown) {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-/** A settlement hour as Claude Code writes it: "5 AM" / "下午 3 点". */
+/** A settlement hour as Claude Code writes it: "5 AM". */
 export function formatHomeHour(hour: number) {
   const h12 = hour % 12 === 0 ? 12 : hour % 12
   return copy(hour < 12 ? 'homeHourAm' : 'homeHourPm', { hour: h12 })

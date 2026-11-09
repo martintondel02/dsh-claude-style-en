@@ -126,7 +126,7 @@ export type SettingsRowSlot = SettingsTabId | SettingsGroupId
  * One settings row a feature owns (D72). The control follows the preference's
  * own declaration (packages/contracts/src/prefs.ts): a boolean is an on/off
  * switch, a choice a segmented control over the values the table carries. Every
- * line is a key in the feature's own copy (`<功能>.copy.json`).
+ * line is a key in the feature's own copy (`<feature>.copy.json`).
  */
 export interface FeatureSettingsRow {
   /** The tab, or the main window group, the row stands in. */

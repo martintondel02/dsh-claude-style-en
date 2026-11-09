@@ -247,39 +247,39 @@ function reasoningStreamScenario({ check }) {
         // The feature's own fold of this row is a press down the fold glide's
         // capture path, so the body it folds has to roll like any other door; a
         // fold that takes the row's state in one frame rolled none.
-        check('思考行自动收起时门真的滚动',
+        check('the door really rolls when the thinking row folds on its own',
           (door.rolling ?? 0) > 1 && (door.unfoldedRolling ?? 0) > 0 && (door.tallest ?? 0) > 20,
           JSON.stringify(door)),
-        check('窗口跟着推理文本长高，长到推理能到的最大高度就停住',
+        check('the window grows with the reasoning text and stops at the height reasoning may reach',
           samples.length > 0 && Number.isFinite(cap) && capped.length > 0 &&
             samples.every((sample) => sample.windowed === true) &&
             samples[0].slotHeight < samples[samples.length - 1].slotHeight &&
             capped.every((sample) => sample.masked === true) &&
             last.slotHeight <= cap + step && last.capped === true,
           JSON.stringify({ samples: samples.length, capped: capped.length, cap, first: samples[0], last })),
-        check('窗口还没长满时，文本铺满窗口、没有遮罩、也没有位移',
+        check('before the window fills, the text fills it with no mask and no offset',
           uncapped.length > 0 && uncapped.some((sample) => sample.textHeight > 0) &&
             uncapped.every((sample) => sample.masked === false && sample.offset === 0 &&
               sample.slotHeight - sample.textHeight <= (sample.lineHeight ?? 0)) &&
             unclosed.length === 0,
           JSON.stringify({ lags: lags.length, unclosed: unclosed.length, first: uncapped.slice(0, 3), lag: lags[0] ?? null })),
-        check('窗口里的文本按两行一步往上走，从不停在整步上（过渡真的在跑）',
+        check('the text in the window steps up two lines at a time and never rests on a whole step (the transition really runs)',
           Math.max(0, ...offsets) > 0 &&
             offsets.some((offset) => Math.round(offset) % (step === 0 ? 1 : step) !== 0),
           JSON.stringify({ offsets: offsets.slice(0, 8), step })),
-        check('两步之间隔着一整段停留，文本不会每个计时器周期都往上走',
+        check('a full hold stands between two steps, so the text does not step on every timer turn',
           gaps.length > 0 && Math.min(...gaps) >= STEP_MIN_GAP_MS,
           JSON.stringify({ steps: stepped.length, gaps: gaps.slice(0, 8) })),
-        check('走到的位置不超过内容的末尾，每一步都走到最新一行',
+        check('the offset never passes the end of the content, and every step reaches the newest line',
           cap !== null && offsets.every((offset) => offset <= reachable + 0.5) &&
             landings.length > 0 && short.length === 0,
           JSON.stringify({ max: Math.max(...offsets), reachable, step, cap, landings: landings.slice(-6), short: short.slice(0, 3) })),
-        check('推理结束后窗口撤下，整段文本原样站着，不再被裁也不再位移',
+        check('once the reasoning ends the window comes off, the whole text stands as it is, uncropped and unoffset',
           standing.windowed === false && standing.offset === 0 && standing.masked === false &&
             (standing.textHeight ?? 0) >= tallest &&
             (standing.slotHeight ?? 0) >= (standing.textHeight ?? 0),
           JSON.stringify({ standing, last, tallest, step })),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }
@@ -321,11 +321,11 @@ function reasoningContinuousScenario({ check }) {
       const first = running[0] ?? {}
       const last = running[running.length - 1] ?? {}
       return [
-        check('逐字跟随直接显示思考文本，不创建步进窗口',
+        check('continuous follow shows the thinking text directly and creates no stepped window',
           running.length > 20 && running.every((sample) => sample.windowed === false && sample.capped === false && sample.masked === false && sample.offset === 0 && sample.target === ''),
           JSON.stringify({ samples: running.length, first, last })),
-        check('思考文本随宿主内容到达持续长高', (last.textHeight ?? 0) > (first.textHeight ?? 0), JSON.stringify({ first: first.textHeight, last: last.textHeight })),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the thinking text keeps growing as the host content arrives', (last.textHeight ?? 0) > (first.textHeight ?? 0), JSON.stringify({ first: first.textHeight, last: last.textHeight })),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

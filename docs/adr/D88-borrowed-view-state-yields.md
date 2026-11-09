@@ -1,27 +1,27 @@
-# D88. 借来的视图状态被改写时整页让开
+# D88. When borrowed view state is rewritten, the whole page yields
 
-## 背景
+## Background
 
-日期视图要跨工作区排段落，而宿主的分组里只有扁平是一张列表。于是它把宿主的视图 store 切到扁平，把读者原来的分组记下来，铃铛换回宿主视图时还原。读者自己的分组和日期视图写的是同一个字段，两个写入者共用一个值。
+The date view has to lay days out across workspaces, while in the host's grouping only flat is a single list. So it switches the host's view store to flat, remembers the reader's grouping, and restores it when the bell switches back to the host view. The reader's own grouping and the date view write the same field, and two writers share one value.
 
-读者在宿主的视图菜单里另选一档时，日期视图下一遍排版读到的既不是扁平，也不是它自己写进去的值。过去它把这个值当成自己的备份覆盖掉，再把扁平写回去：读者的选择当帧消失，工作区分组与它的切换在日期视图开着时整个失效。
+When the reader picks another tier in the host's view menu, the date view's next layout pass reads neither flat nor the value it wrote itself. It used to overwrite that value as its own backup and write flat back: the reader's choice vanished that frame, and workspace grouping and its switch stopped working entirely while the date view was open.
 
-## 决定
+## Decision
 
-- 写进宿主视图 store 的那一档由写它的那一半记住。日期视图只写扁平，扁平就是它的写入。
-- 压平之后再读到的分组只要是别人的，判定读者改了分组：日期视图让开，走关灯的同一条路径，body 上的模式标记摘掉，读者那一档留在 store 里。
-- 让开时还回去的是读者刚选的那一档，不是压平之前记下的那一档。
-- 把分组记成「进行中的分组」的那一半，在日期视图开着时只跳过扁平；其余各档照记，它正是日期视图让开之后要留在 store 里的那一个。
-- 已归档那一页的强制扁平不变：日期视图在已归档里不压平，两处不会互相触发。
+- The tier written into the host's view store is remembered by the half that writes it. The date view writes only flat, and flat is its write.
+- A grouping read after flattening that belongs to someone else is judged as the reader having changed the grouping: the date view yields, taking the same path as turning the lights off, the mode marker on the body is removed, and the reader's tier stays in the store.
+- What is handed back on yielding is the tier the reader has just chosen, not the tier remembered before flattening.
+- The half that records the grouping as the "grouping in progress" skips only flat while the date view is open; every other tier is recorded as usual, and that is exactly the one to leave in the store after the date view yields.
+- The archived page's forced flat stays as it is: the date view does not flatten in archived, so the two do not trigger each other.
 
-## 后果
+## Consequences
 
-- 日期视图开着时改分组，列表按读者的分组排，日期视图自己关掉，铃铛跟着松开。
-- 读者改过分组再按铃铛，日期视图按新的那一档压平与还回。
-- 放弃的是把日期视图当成分组字段的唯一主人：宿主视图菜单的写入优先于它。
-- 已归档里改分组仍被宿主的视图 store 按回扁平，那是那一页原来的行为。
+- Changing the grouping while the date view is open lays the list out by the reader's grouping, the date view turns itself off, and the bell releases with it.
+- After the reader changes the grouping and then presses the bell, the date view flattens and restores against the new tier.
+- Given up: treating the date view as the only owner of the grouping field: the host view menu's write takes precedence over it.
+- Changing the grouping in archived is still pressed back to flat by the host's view store, which is that page's original behaviour.
 
-## 重审条件
+## Reconsider when
 
-- 宿主为日期这一档留出扩展点，或视图 store 能按数据源分别记录分组时，这套让开退场。
-- 宿主的分组枚举换名或增加一档时，记住写入的那一半要跟着核实。
+- When the host leaves an extension point for the date tier, or the view store can record grouping per data source, this yielding retires.
+- When the host's grouping enum is renamed or gains a tier, the half that remembers writes is checked with it.

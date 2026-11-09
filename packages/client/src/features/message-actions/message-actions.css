@@ -108,7 +108,7 @@ body[data-dsh-claude-style] .dsh-claude-message-editor-save {
   color: var(--dsw-alias-label-primary-foreground);
 }
 
-/* 文字清空时没有可发的消息：保存按钮先站着不动。 */
+/* With the text cleared there is no message to send: the save button stands still. */
 body[data-dsh-claude-style] .dsh-claude-message-editor-save:disabled {
   opacity: 0.5;
   cursor: default;

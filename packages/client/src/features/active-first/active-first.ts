@@ -61,7 +61,7 @@ export function install() {
    * be put back under its own day section on the next pass — two features
    * rewriting one order, which the reader sees as the list twitching. What runs
    * right now is already said twice over: the bell's badge and its card, and the
-   * 「优先级」block above the list.
+   * "Priority" block above the list.
    */
   const reorder = () => {
     if (document.body.hasAttribute('data-dsh-claude-date-groups')) return

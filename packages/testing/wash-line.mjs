@@ -76,16 +76,16 @@ function washLineScenario({ check }) {
       const painted = notes.painted ?? {}
       const body = await page.evaluate(() => document.body.getAttribute('data-dsh-claude-status-motion'))
       return [
-        check('读者选的那一档由宿主设置一路走到页面上',
+        check('the choice the reader made travels from the host settings to the page',
           body === 'wash' && painted.statusMotion === 'wash',
           JSON.stringify({ body, painted: painted.statusMotion })),
-        check('状态行的文字跑起渐变流动的两个循环，扫光不再上场',
+        check('the line copy runs the two gradient-wash loops, and the sweep no longer plays',
           painted.animations === 'dsh-claude-wash-hue, dsh-claude-wash-drift' && painted.washes === 7 && painted.shimmer === true,
           JSON.stringify(painted)),
-        check('说法与计时照旧',
+        check('the wording and the clock stay as they were',
           ANY_WORD.test(painted.word ?? '') && /^\d+\s*(s|sec|secs|second|seconds|秒)$/i.test(painted.clock ?? ''),
           JSON.stringify({ word: painted.word, clock: painted.clock })),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

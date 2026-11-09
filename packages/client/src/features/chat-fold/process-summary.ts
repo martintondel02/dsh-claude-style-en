@@ -11,10 +11,11 @@ import { SWEEP_BAND_CLASS, buildSweepBand } from '../../shared/sweep-band'
 import { ASSISTANT_STEP_KIND, CHAT_GROUP_PART_ATTRIBUTE, CHAT_GROUP_PART_REASONING, FLOW_KIND_ATTRIBUTE, PROCESS_ACTIVITY_SELECTOR, PROCESS_CONTENT_SELECTOR, PROCESS_GROUP_SELECTOR, SHIMMER_ATTRIBUTE, SHIMMER_SELECTOR, TOOL_CALL_KIND } from '@dsh-claude-style/contracts/dom'
 
 /**
- * A process group's header names what the group holds — 「执行 2 次思考，调用 1 次
- * 工具」 — in place of the host's list of activities (「执行了命令，已读取文件，
- * 已调用工具等」), each number rolling as the work grows. A header without the
- * room for the sentence falls back to the compact figures (`思考×2 · 工具×1`).
+ * A process group's header names what the group holds — "2 thoughts, 1 tool
+ * call" — in place of the host's list of activities ("ran a command, read a
+ * file, made a tool call, and more"), each number rolling as the work grows. A
+ * header without the room for the sentence falls back to the compact figures
+ * (`Thinking×2 · Tools×1`).
  *
  * The host keeps its header and its words: the summary is a span of the skin's
  * own at the end of the control, marked quiet so writing it wakes no pass, and

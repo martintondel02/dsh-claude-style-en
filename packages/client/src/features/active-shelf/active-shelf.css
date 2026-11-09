@@ -1,17 +1,18 @@
-/* ---------- 「工作区」标题行右端的铃铛 ---------- */
-/* packages/client/src/features/active-shelf/active-shelf.ts 把它插在宿主的
-   「工作区」标题行右端、它自己的两枚分区动作之前。这里只管形状：
-   - 一枚与旁边宿主按钮同尺寸的安静按钮（28px 盒、16px 图标、1px 描边）；
-   - 日期视图开着时铃铛是按下态（读者按它换的是整个列表的排法）。 */
+/* ---------- The bell at the right end of the "Workspace" heading row ---------- */
+/* packages/client/src/features/active-shelf/active-shelf.ts inserts it at the
+   right end of the host's "Workspace" heading row, before its own two section
+   actions. This file draws only the shape:
+   - a quiet button the size of the host buttons beside it (28px box, 16px icon, 1px border);
+   - with the date view on, the bell is pressed (pressing it changes how the whole list is ordered). */
 
-/* 这一对的盒子：一行横排，和旁边宿主的按钮在同一条中线上。 */
+/* The pair's box: one row, on the same centre line as the host buttons beside it. */
 body[data-dsh-claude-style] .dsh-claude-active-shelf-actions {
   display: flex;
   align-items: center;
   gap: 2px;
 }
 
-/* 铃铛的尺寸。 */
+/* The bell's size. */
 body[data-dsh-claude-style] .dsh-claude-active-shelf-trigger {
   position: relative;
   display: inline-flex;
@@ -23,8 +24,8 @@ body[data-dsh-claude-style] .dsh-claude-active-shelf-trigger {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  /* 与标题行里宿主那两枚分区图标共用同一个令牌（二级墨色）：工作区视图与它们同色，
-     日期视图取同一张卡的强调色，两种排法在墨色上就分得开。 */
+  /* Shares one token (secondary ink) with the host's two section icons in the heading row:
+     the workspace view matches them, the date view takes the same card's accent, so the two orders are told apart by ink. */
   color: var(--dsw-alias-label-secondary);
   cursor: pointer;
   transition:
@@ -32,7 +33,7 @@ body[data-dsh-claude-style] .dsh-claude-active-shelf-trigger {
     color var(--dsh-claude-duration-feedback) var(--dsh-claude-ease-standard);
 }
 
-/* 与宿主标题行里的图标按钮同一个悬停底色，墨色同时提到正文墨色。 */
+/* The same hover ground as the host's icon buttons in the heading row, with the ink raised to the body ink. */
 body[data-dsh-claude-style] .dsh-claude-active-shelf-trigger:hover {
   background: var(--dsw-alias-interactive-bg-hover);
   color: var(--dsw-alias-label-primary);
@@ -51,8 +52,8 @@ body[data-dsh-claude-style] .dsh-claude-active-shelf-trigger-icon {
   height: 16px;
 }
 
-/* 日期视图开着时铃铛是按下态：墨色与背光都取配色卡自己的强调色，读者按它换的是
-   整个列表的排法，这一枚就一直亮着。 */
+/* With the date view on, the bell is pressed: ink and glow both take the card's own accent, and
+   since pressing it changes how the whole list is ordered, this one stays lit. */
 body[data-dsh-claude-style][data-dsh-claude-date-groups] .dsh-claude-active-shelf-trigger {
   background: color-mix(in srgb, var(--dsw-alias-brand-primary) 16%, transparent);
   color: var(--dsw-alias-brand-primary);

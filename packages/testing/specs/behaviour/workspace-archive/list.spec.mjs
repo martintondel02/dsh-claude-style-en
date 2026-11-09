@@ -1,5 +1,5 @@
 /**
- * The 已归档 segment is the skin's own page of the archive, not the host's tree:
+ * The Archived segment is the skin's own page of the archive, not the host's tree:
  * one page of thirty conversations stands first and the reader's scroll to the
  * foot appends the next, so a workspace whose archive holds hundreds keeps the
  * sidebar fast and every row still opens, unarchives and deletes through the
@@ -67,7 +67,7 @@ async function setup(t, count) {
 }
 
 /**
- * The 已归档 segment: the second radio of the section's own switch. While 进行中
+ * The Archived segment: the second radio of the section's own switch. While Active
  * stands the control rests: it comes back under the pointer, so the heading's
  * hover is the reader's way to it (workspace.css).
  */
@@ -78,7 +78,7 @@ async function pickArchived(t) {
   await t.settle()
 }
 
-/** The 进行中 segment. */
+/** The Active segment. */
 async function pickActive(t) {
   await t.page.getByRole('radiogroup').getByRole('radio').nth(0).click()
   await t.settle()
@@ -225,7 +225,7 @@ export default spec({ page: 'switches' }, ({ test }) => {
     t.expectThat.equal(await t.page.getByRole('radiogroup').getByRole('radio', { checked: true }).count(), 1, 'the segment still names one view')
   })
 
-  test('leaving 已归档 hands the room back and returning restarts at the top', async (t) => {
+  test('leaving the Archived segment hands the room back and returning restarts at the top', async (t) => {
     await setup(t, 420)
     await pickArchived(t)
     await scrollToFoot(t)

@@ -219,31 +219,31 @@ function motionScenario({ check }) {
       const menu = notes.menu ?? {}
       const closedScale = Number.parseFloat(menu.closed?.scale ?? 'NaN')
       return [
-        check('首页标题的标志与问候语错开升起',
+        check('the hero mark and its greeting rise one after the other',
           notes.mark?.name === 'dsh-claude-hero-rise' && notes.greeting?.name === 'dsh-claude-hero-rise' && notes.greeting?.delay !== '0s' && notes.mark?.delay === '0s',
           JSON.stringify({ mark: notes.mark, greeting: notes.greeting })),
-        check('用量面板的数字到达时从占位里显出来',
+        check('the usage panel numbers reveal themselves from their placeholders as they arrive',
           reveal.length > 0 && reveal[0].words === 'dsh-claude-home-reveal-words', JSON.stringify(reveal)),
-        check('开关打开页面时静止，按下的那一刻才弹跳着过去，最后留下原来的值',
+        check('the switch rests when the page opens, bounces only when pressed, and leaves the value it started with',
           sw.before?.moved === false && sw.before?.animation === 'none' &&
             sw.pressed?.[0]?.moved === true && sw.pressed[0].on !== sw.before?.on &&
             sw.pressed[0].animation === (sw.pressed[0].on ? 'dsh-claude-switch-on' : 'dsh-claude-switch-off') &&
             sw.after?.on === sw.before?.on,
           JSON.stringify(sw)),
-        check('切到右侧的标签时新页从右侧滑入，旧页的静止副本向左滑出、不进入读屏与 Tab 顺序，播完即移除',
+        check('switching to the tab on the right slides the new page in from the right and the old page still copy out to the left, out of the screen reader and tab order, removed once it has played',
           (slide.during ?? []).length > 0 && slide.during.every((frame) => frame.enter === 'forward' && frame.enterAnimation === 'dsh-claude-page-in' &&
             frame.leave === 'forward' && frame.leaveAnimation === 'dsh-claude-page-out' && frame.hidden === true) && slide.after === 0,
           JSON.stringify({ during: (slide.during ?? []).slice(0, 2), frames: (slide.during ?? []).length, after: slide.after })),
-        check('超时徽标弹出时滑入，离开时先播完退出再隐藏',
+        check('the overtime badge slides in as it appears and plays its exit out before it hides',
           notes.badgeIn?.name === 'dsh-claude-wait-badge-in' &&
             JSON.stringify(notes.badgeSteps) === JSON.stringify([{ leaving: true, hidden: false }, { leaving: false, hidden: true }]),
           JSON.stringify({ in: notes.badgeIn, steps: notes.badgeSteps })),
-        check('菜单卡片展开后停在原尺寸，收起后回到从触发点长出的起始比例',
+        check('the menu card comes to rest at full size when open and returns to the scale it grew from at its trigger when closed',
           menu.opened?.open === 'true' && menu.opened?.scale === '1' && menu.opened?.transform === 'none' && menu.opened?.opacity === '1' &&
             menu.closed?.open === 'false' && menu.closed?.visibility === 'hidden' && Math.abs(closedScale * 0.99 - 0.97) < 0.001 &&
             /^matrix\(0\.99, 0, 0, 0\.99,/.test(menu.closed?.transform ?? ''),
           JSON.stringify(menu)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

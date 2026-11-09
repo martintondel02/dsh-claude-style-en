@@ -246,7 +246,7 @@ function statsPositionScenario({ check }) {
         check('the room coming back gives the whole line back',
           roomy !== null && wide !== null && roomy.figures === wide.figures && !roomy.tight,
           JSON.stringify(roomy)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

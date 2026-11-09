@@ -130,15 +130,15 @@ function doorPinScenario({ check }) {
       const slipped = rolling.filter((frame) => !frame.pinned)
       const spreads = doors.map((frames) => frames.length === 0 ? null : Math.max(...frames.map((frame) => frame.row)) - Math.min(...frames.map((frame) => frame.row)))
       return [
-        check('两扇门都在推理流式输出时滚过',
+        check('both doors roll while the reasoning streams',
           notes.shut?.expanded === 'true' && notes.open?.expanded === 'false' && notes.streaming === true &&
             doors.every((frames) => frames.some((frame) => frame.rolling)),
           JSON.stringify({ shut: notes.shut, open: notes.open, streamingAfter: notes.streaming, doorFrames: doors.map((frames) => frames.filter((frame) => frame.rolling).length) })),
-        check('门滚动的每一帧状态行都钉着', rolling.length > 0 && slipped.length === 0,
+        check('the status line stays pinned in every frame a door rolls', rolling.length > 0 && slipped.length === 0,
           `${slipped.length} of ${rolling.length} door frames unpinned${slipped.length === 0 ? '' : `, row ${Math.min(...slipped.map((f) => f.row))}..${Math.max(...slipped.map((f) => f.row))}`}`),
-        check('从按下到门落定，状态行停在同一处，连半个像素也不动', spreads.every((spread) => spread === 0),
+        check('from the press to the door landing the status line stands still, down to half a pixel', spreads.every((spread) => spread === 0),
           `spread per door ${JSON.stringify(spreads)} over ${doors.map((frames) => frames.length).join(' and ')} frames`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

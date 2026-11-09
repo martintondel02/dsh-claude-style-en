@@ -15,26 +15,26 @@ function shape(tag: 'path' | 'rect' | 'circle', props: Record<string, string | n
 }
 
 const GLYPHS: Record<SettingsTabId, React.ReactElement[]> = {
-  // 通用: two sliders, each with its knob.
+  // General: two sliders, each with its knob.
   general: [
     shape('path', { d: 'M4 8h6M14 8h6M12 5.4v5.2M4 16h16M8 13.4v5.2' }),
   ],
-  // 外观: a disc whose left half is drawn out — the page's colours, picked.
+  // Appearance: a disc whose left half is drawn out — the page's colours, picked.
   appearance: [
     shape('circle', { cx: 12, cy: 12, r: 7.4 }),
     shape('path', { d: 'M12 4.6a7.4 7.4 0 0 1 0 14.8' }),
   ],
-  // 主窗口: a window with its bar.
+  // Main window: a window with its bar.
   'main-window': [
     shape('rect', { x: 3.2, y: 4.8, width: 17.6, height: 14.4, rx: 3 }),
     shape('path', { d: 'M3.2 9.4h17.6M6.6 7.1h.01M9.4 7.1h.01' }),
   ],
-  // 侧栏: a panel with its divider.
+  // Sidebar: a panel with its divider.
   sidebar: [
     shape('rect', { x: 3.2, y: 4.8, width: 17.6, height: 14.4, rx: 3 }),
     shape('path', { d: 'M9.8 4.8v14.4' }),
   ],
-  // 动效: one wave, the strip's own motion mark.
+  // Motion: one wave, the strip's own motion mark.
   motion: [
     shape('path', { d: 'M3.4 13.4c2.1-5 3.5-5 5.7 0s3.6 5 5.7 0 3.6-5 5.8 0' }),
   ],

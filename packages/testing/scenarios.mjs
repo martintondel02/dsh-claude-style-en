@@ -76,7 +76,7 @@ async function captureBothSchemes(context) {
     const file = path.join(out, `shots-${scheme}.png`)
     await page.screenshot({ path: file })
     files.push(file)
-    checks.push(check(`${scheme} 截图的可见文本没有个人数据`, true, `sweep caught ${caught.length}; ${visibleText.replace(/\s+/g, ' ').length} chars; ${file}`))
+    checks.push(check(`the ${scheme} screenshot's visible text carries no personal data`, true, `sweep caught ${caught.length}; ${visibleText.replace(/\s+/g, ' ').length} chars; ${file}`))
   }
   return { checks, files }
 }
@@ -129,8 +129,8 @@ function onRowCheck(shown) {
     if (next === undefined || gaps[at + 1] <= LANDING_GIVE) return false
     return rowBox(next) === rowBox(frame)
   })
-  return check('真行显形期间替身一直落在它身上', shown.length > 0 && apart.length === 0,
-    `frames with the row shown=${shown.length}, of them apart=${apart.length}${apart.length === 0 ? '' : `：${apart.slice(0, 3).map((frame) => `${flightGap(frame).toFixed(2)}px`).join(' | ')}`}`)
+  return check('the stand-in stays on the row while the row is shown', shown.length > 0 && apart.length === 0,
+    `frames with the row shown=${shown.length}, of them apart=${apart.length}${apart.length === 0 ? '' : `: ${apart.slice(0, 3).map((frame) => `${flightGap(frame).toFixed(2)}px`).join(' | ')}`}`)
 }
 
 /**
@@ -163,14 +163,17 @@ async function handoverFrames(context) {
 /** The scenarios: each boots its own instance, sends its prompt, and asserts. */
 const SCENARIOS = {
   /**
-   * 读者消息下面那行控件（features/message-actions）：撤回与编辑插在宿主自己的
-   * 控件行里，整行只在悬停时显现；撤回从消息前一个事件分岔并把原文放回新会话的
-   * 输入框，编辑把改过的文字在新会话里直接发出，原会话原样留着。
+   * The control row below the reader's message (features/message-actions): undo and
+   * edit sit in the host's own control row, which appears only on hover; undo forks
+   * from the event before the message and puts the original text into the new
+   * conversation's composer, while edit sends the changed text straight into the new
+   * conversation and leaves the original one as it was.
    *
-   * 这一场按读者看见的样子选：控件行是宿主的 `[data-clock]`，皮肤的两个按钮就
-   * 是它末尾的两个按钮（宿主先画时间与复制），编辑框是那一行里唯一的文本域。
-   * 首屏那一步顺带核对首页统计数值的提示：那也是宿主自己的 Tooltip，没有浏览器
-   * 原生的 `title`。
+   * The scenario picks them as the reader sees them: the control row is the host's
+   * `[data-clock]`, the skin's two buttons are its last two (the host paints the time
+   * and the copy action first), and the editor is the only textarea in that row. The
+   * first-screen step also checks the home statistics value's tooltip: that is the
+   * host's own Tooltip too, with no native `title`.
    */
   messageAnswerActions: messageAnswerActionsScenario({ check }),
   messageActions: messageActionsScenario({ check }),
@@ -182,11 +185,11 @@ const SCENARIOS = {
     async assert({ page, session }) {
       const flow = await readFlow(page)
       return [
-        check('读者的消息成为一行', flow.userRows === 1 && flow.text.includes('hello there'), `userRows=${flow.userRows}`),
-        check('脚本回答的标题与列表都在页面里', flow.text.includes('Hello') && flow.text.includes('first point'), flow.text.slice(0, 120)),
-        check('思考过程归入一个过程组', flow.processGroups === 1 && flow.kinds.includes('turn-process'), `processGroups=${flow.processGroups} kinds=${flow.kinds.join(',')}`),
-        check('流式标记已经收起', flow.streaming === 0, `streaming=${flow.streaming}`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('a message from the reader becomes a row', flow.userRows === 1 && flow.text.includes('hello there'), `userRows=${flow.userRows}`),
+        check('the scripted answer heading and list are on the page', flow.text.includes('Hello') && flow.text.includes('first point'), flow.text.slice(0, 120)),
+        check('the thinking goes into one process group', flow.processGroups === 1 && flow.kinds.includes('turn-process'), `processGroups=${flow.processGroups} kinds=${flow.kinds.join(',')}`),
+        check('the streaming mark has been put away', flow.streaming === 0, `streaming=${flow.streaming}`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },
@@ -271,20 +274,20 @@ const SCENARIOS = {
       }
       await page.setViewportSize({ width: 390, height: 844 })
       return [
-        check('页面是手机的宽度', narrow.width === 390, `innerWidth=${narrow.width}`),
-        check('权限选择器收起了下三角', narrow.chevron === false, `chevron=${narrow.chevron}`),
-        check('窄屏下两个选择器的名称超出时以省略号收尾', narrow.permMax === '132px' &&
+        check('the page is a phone width', narrow.width === 390, `innerWidth=${narrow.width}`),
+        check('the permission picker hides its chevron', narrow.chevron === false, `chevron=${narrow.chevron}`),
+        check('both pickers end overlong names with an ellipsis on a narrow screen', narrow.permMax === '132px' &&
           (narrow.modelMax === '280px' || narrow.modelMax === 'none') &&
           narrow.permEllipsis === 'ellipsis' && narrow.modelEllipsis === 'ellipsis',
           JSON.stringify({ permMax: narrow.permMax, modelMax: narrow.modelMax, perm: narrow.permEllipsis, model: narrow.modelEllipsis })),
-        check('上下文只留圆环，数字不再显示', narrow.ring === true && narrow.number === false,
+        check('the context meter keeps only its ring, without the number', narrow.ring === true && narrow.number === false,
           JSON.stringify({ ring: narrow.ring, number: narrow.number })),
-        check('控件都留在输入卡片里，圆环也不与旁边的控件重叠', fits(narrow),
+        check('every control stays inside the composer card, and the ring does not overlap the controls beside it', fits(narrow),
           JSON.stringify({ card: narrow.card, perm: narrow.perm, model: narrow.model, effort: narrow.effort, meter: narrow.meter })),
-        check('再窄一些时控件仍留在卡片里，输入区也不再横向滚动',
+        check('at a narrower width the controls stay in the card and the composer no longer scrolls sideways',
           fits(tight) && tight.cardOver <= 0 && tight.rowOver <= 0,
           JSON.stringify({ width: tight.width, card: tight.card, cardOver: tight.cardOver, rowOver: tight.rowOver, overflowing: tight.overflowing, perm: tight.perm, model: tight.model, effort: tight.effort, meter: tight.meter })),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },
@@ -328,16 +331,16 @@ const SCENARIOS = {
       await page.waitForTimeout(500)
       const closed = await read()
       return [
-        check('收起时那枚按钮不占位置，宿主自己的打开按钮在',
+        check('while collapsed the button takes no room, and the host\'s own open button is there',
           before.buttons === 1 && before.shown === 0 && before.expand === true && before.panel === false,
           JSON.stringify(before)),
-        check('面板打开后它出现在头部那一行，面板里宿主自己那枚留在原处',
+        check('once the panel opens it appears in the header row, and the host\'s own button stays inside the panel',
           open.shown === 1 && open.box !== null && open.host === true && open.hostShown === true,
           JSON.stringify(open)),
-        check('按下它面板收起，宿主的打开按钮回到原处',
+        check('pressing it collapses the panel and the host\'s open button returns',
           closed.panel === false && closed.expand === true && closed.shown === 0 && closed.host === false,
           JSON.stringify(closed)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },
@@ -348,11 +351,11 @@ const SCENARIOS = {
     async assert({ page, session }) {
       const flow = await readFlow(page)
       return [
-        check('工具调用单独成行', flow.toolRows === 1, `toolRows=${flow.toolRows}`),
-        check('调用行带着调用编号', flow.callIds.length > 0 && flow.callIds.every((id) => id !== null && id !== ''), `callIds=${JSON.stringify(flow.callIds)}`),
-        check('工具结果之后的回答已渲染', flow.text.includes('workspace holds these files'), flow.text.slice(-160)),
-        check('过程组收住了整轮', flow.processGroups === 1 && flow.kinds.includes('turn-tail'), `processGroups=${flow.processGroups} kinds=${flow.kinds.join(',')}`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the tool call takes a row of its own', flow.toolRows === 1, `toolRows=${flow.toolRows}`),
+        check('the call row carries the call id', flow.callIds.length > 0 && flow.callIds.every((id) => id !== null && id !== ''), `callIds=${JSON.stringify(flow.callIds)}`),
+        check('the answer after the tool result is rendered', flow.text.includes('workspace holds these files'), flow.text.slice(-160)),
+        check('the process group holds the whole turn', flow.processGroups === 1 && flow.kinds.includes('turn-tail'), `processGroups=${flow.processGroups} kinds=${flow.kinds.join(',')}`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },
@@ -390,16 +393,16 @@ const SCENARIOS = {
       // reader leaving the tail: its own mark stays on in every frame the live turn's row is pinned in.
       const dropped = sampled.filter((frame) => frame.running !== null && frame.running !== undefined && frame.following === false && overflowing(frame))
       return [
-        check('逐帧采样真的在跑', sampled.length > 30, `frames=${sampled.length}`),
-        check('回答在采样期间长出来', grown > 100, `grew ${grown}px during the trace`),
-        check('位置跟着内容走', moved > 5, `moved in ${moved} of ${sampled.length} frames`),
-        check('没有倒退的一帧', backward.length === 0, `backward=${backward.length}${backward.length === 0 ? '' : ` at ${backward.slice(0, 3).map((f) => f.t).join(',')}ms`}`),
-        check('尾部没有自己跑远', escaped.length === 0, `escaped=${escaped.length}${escaped.length === 0 ? '' : ` at ${escaped.slice(0, 3).map((f) => f.t).join(',')}ms`}`),
-        check('跟随期间尾部留在视野里', worst <= MAX_FOLLOW_GAP_PX, `maxGap=${worst}px of ${following.length} following frames`),
-        check('落定后回到末尾', last !== undefined && last.gap <= 4, `lastGap=${last === undefined ? 'n/a' : last.gap}`),
-        check('输出期间宿主自己的跟随一直开着', dropped.length === 0, `frames the host mark was off in=${dropped.length}${dropped.length === 0 ? '' : ` at ${dropped.slice(0, 3).map((f) => f.t).join(',')}ms`}`),
-        check('满屏之后宿主的状态行不再随内容移动，连半个像素也不动', live.length > 10 && spread === 0, `overflowing frames with the row=${live.length}, top ${tops.length === 0 ? 'n/a' : `${Math.min(...tops)}..${Math.max(...tops)}`}`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the frame sampling really runs', sampled.length > 30, `frames=${sampled.length}`),
+        check('the answer grows during the sampling', grown > 100, `grew ${grown}px during the trace`),
+        check('the position follows the content', moved > 5, `moved in ${moved} of ${sampled.length} frames`),
+        check('no frame slides back', backward.length === 0, `backward=${backward.length}${backward.length === 0 ? '' : ` at ${backward.slice(0, 3).map((f) => f.t).join(',')}ms`}`),
+        check('the tail does not run away on its own', escaped.length === 0, `escaped=${escaped.length}${escaped.length === 0 ? '' : ` at ${escaped.slice(0, 3).map((f) => f.t).join(',')}ms`}`),
+        check('the tail stays in view while following', worst <= MAX_FOLLOW_GAP_PX, `maxGap=${worst}px of ${following.length} following frames`),
+        check('once settled it returns to the end', last !== undefined && last.gap <= 4, `lastGap=${last === undefined ? 'n/a' : last.gap}`),
+        check('the host\'s own follow stays on while the answer streams', dropped.length === 0, `frames the host mark was off in=${dropped.length}${dropped.length === 0 ? '' : ` at ${dropped.slice(0, 3).map((f) => f.t).join(',')}ms`}`),
+        check('once the transcript fills the screen the host\'s status line stops moving with the content, down to half a pixel', live.length > 10 && spread === 0, `overflowing frames with the row=${live.length}, top ${tops.length === 0 ? 'n/a' : `${Math.min(...tops)}..${Math.max(...tops)}`}`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },
@@ -466,16 +469,16 @@ const SCENARIOS = {
       const linkPaints = [...new Set(flight.flatMap((frame) => frame.linkPaints ?? []))]
       const withLinks = flight.filter((frame) => (frame.links ?? 0) > 0).length
       return [
-        check('替身起飞后离开页面', firstGhost !== -1 && goneByNow, `firstGhost at ${firstGhost === -1 ? 'n/a' : `${frames[firstGhost].t}ms`}, ghost at the end=${last.ghost}, left by now=${goneByNow}`),
-        check('真行在飞行期间不可见', hidden.length > 0 && exposedWhileFlying.length === 0, `flying frames=${hidden.length}, of them visible=${exposedWhileFlying.length}`),
-        check('读者的字每一帧都看得见', words.length === flight.length, `words on ${words.length} of ${flight.length} frames after take-off`),
-        check('真行落定后可见并带着字', settled.rows > 0 && settled.rowVisible === true && (settled.rowWords ?? []).includes('hello there'), `rows=${settled.rows} visible=${settled.rowVisible} words=${JSON.stringify(settled.rowWords)}`),
-        check('替身带走了输入卡片的样子', sameType === true, takeOff === undefined ? 'no take-off frame in the trace' : `clone ${takeOff.clone.size}/${takeOff.clone.color} vs composer ${takeOff.composer.size}/${takeOff.composer.color}, card ${takeOff.cloneCard} vs ${takeOff.composerCard}`),
-        check('替身落地时不低于它替换的那一行', covered.length > 0 && short.length === 0, `readable frames=${covered.length}, standing above the row's own foot=${covered.length - short.length}${short.length === 0 ? '' : `：${short.slice(0, 3).map((frame) => `shell ${(frame.shell[3] - frame.shell[1]).toFixed(1)} vs row ${frame.bubble[3] - frame.bubble[1]}`).join(' | ')}`}`),
+        check('the stand-in leaves the page after take-off', firstGhost !== -1 && goneByNow, `firstGhost at ${firstGhost === -1 ? 'n/a' : `${frames[firstGhost].t}ms`}, ghost at the end=${last.ghost}, left by now=${goneByNow}`),
+        check('the real row stays invisible while the flight is up', hidden.length > 0 && exposedWhileFlying.length === 0, `flying frames=${hidden.length}, of them visible=${exposedWhileFlying.length}`),
+        check('the reader\'s words are visible in every frame', words.length === flight.length, `words on ${words.length} of ${flight.length} frames after take-off`),
+        check('once it lands the row is visible and carries the words', settled.rows > 0 && settled.rowVisible === true && (settled.rowWords ?? []).includes('hello there'), `rows=${settled.rows} visible=${settled.rowVisible} words=${JSON.stringify(settled.rowWords)}`),
+        check('the stand-in carries the composer card\'s look', sameType === true, takeOff === undefined ? 'no take-off frame in the trace' : `clone ${takeOff.clone.size}/${takeOff.clone.color} vs composer ${takeOff.composer.size}/${takeOff.composer.color}, card ${takeOff.cloneCard} vs ${takeOff.composerCard}`),
+        check('the stand-in does not land shorter than the row it replaces', covered.length > 0 && short.length === 0, `readable frames=${covered.length}, standing above the row's own foot=${covered.length - short.length}${short.length === 0 ? '' : `: ${short.slice(0, 3).map((frame) => `shell ${(frame.shell[3] - frame.shell[1]).toFixed(1)} vs row ${frame.bubble[3] - frame.bubble[1]}`).join(' | ')}`}`),
         onRowCheck(shown),
-        check('替身的底色是画面上的颜色，不是半透明的令牌', covered.length > 0 && translucent.length === 0, `translucent fills=${translucent.length}${translucent.length === 0 ? '' : `（${[...new Set(translucent.map((frame) => frame.shellFill))].join('、')}）`}`),
-        check('Windows 标题栏标记下，替身里的祖先链不画伪元素', withLinks > 0 && linkPaints.length === 0, `frames carrying the chain=${withLinks}${linkPaints.length === 0 ? '' : `，painting: ${linkPaints.join('、')}`}`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the stand-in\'s fill is the colour on screen, an opaque token rather than a translucent one', covered.length > 0 && translucent.length === 0, `translucent fills=${translucent.length}${translucent.length === 0 ? '' : ` (${[...new Set(translucent.map((frame) => frame.shellFill))].join(', ')})`}`),
+        check('under the Windows titlebar mark the stand-in\'s ancestor chain paints no pseudo-elements', withLinks > 0 && linkPaints.length === 0, `frames carrying the chain=${withLinks}${linkPaints.length === 0 ? '' : `, painting: ${linkPaints.join(', ')}`}`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },
@@ -507,11 +510,11 @@ const SCENARIOS = {
       const short = covered.filter((frame) => frame.shell[3] - frame.shell[1] < frame.bubble[3] - frame.bubble[1] - 1)
       const shown = covered.filter((frame) => frame.rowVisible === true)
       return [
-        check('满屏的对话里也读到了飞行', firstGhost !== -1 && covered.length > 5, `firstGhost at ${firstGhost === -1 ? 'n/a' : `${frames[firstGhost].t}ms`}, readable frames=${covered.length}`),
+        check('the flight is read in a full transcript too', firstGhost !== -1 && covered.length > 5, `firstGhost at ${firstGhost === -1 ? 'n/a' : `${frames[firstGhost].t}ms`}, readable frames=${covered.length}`),
         onRowCheck(shown),
-        check('替身落地时不低于它替换的那一行', covered.length > 0 && short.length === 0, `readable frames=${covered.length}, standing above the row's own foot=${covered.length - short.length}`),
-        check('落定后那一行带着字', settled.rows > 0 && settled.rowVisible === true, `rows=${settled.rows} visible=${settled.rowVisible}`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the stand-in does not land shorter than the row it replaces', covered.length > 0 && short.length === 0, `readable frames=${covered.length}, standing above the row's own foot=${covered.length - short.length}`),
+        check('once it settles the row carries the words', settled.rows > 0 && settled.rowVisible === true, `rows=${settled.rows} visible=${settled.rowVisible}`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },
@@ -564,14 +567,14 @@ const SCENARIOS = {
       const line = (state) => {
         const state_ = byState(state)
         const broken = state_.filter((result) => !result.ok && result.observation !== true).map((result) => `${result.id} (${result.observed})`)
-        return check(`${state} 状态的条目都在`, broken.length === 0, `${state_.length} 条${broken.length === 0 ? '' : `，失效：${broken.join('、')}`}`)
+        return check(`the entries for the ${state} state all stand`, broken.length === 0, `${state_.length} entries${broken.length === 0 ? '' : `, broken: ${broken.join(', ')}`}`)
       }
       return [
         ...[...new Set(results.map((result) => result.state))].map((state) => line(state)),
-        check('没有页面形态的条目已逐条列出', unchecked.length > 0, `${unchecked.length} 条由行为场景与单元测试持有：${unchecked.map((result) => result.id).join('、')}`),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
-        ...failed.slice(0, 8).map((result) => check(`契约条目 ${result.id} 仍然成立`, false, `${result.observed}（${result.state}）`)),
-        ...differing.map((result) => observe(`契约条目 ${result.id} 的宿主输出仍与快照记录相同`, false, `${result.observed}（${result.state}）`)),
+        check('the entries with no page state are listed one by one', unchecked.length > 0, `${unchecked.length} entries are held by behaviour scenarios and unit tests: ${unchecked.map((result) => result.id).join(', ')}`),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        ...failed.slice(0, 8).map((result) => check(`contract entry ${result.id} still holds`, false, `${result.observed} (${result.state})`)),
+        ...differing.map((result) => observe(`contract entry ${result.id}'s host output still matches the snapshot`, false, `${result.observed} (${result.state})`)),
       ]
     },
   },
@@ -612,9 +615,9 @@ const SCENARIOS = {
       const flow = await readFlow(context.page)
       const capture = await captureBothSchemes(context)
       return [
-        check('脚本回答已渲染', flow.text.includes('Hello') && flow.streaming === 0, `streaming=${flow.streaming}`),
+        check('the scripted answer is rendered', flow.text.includes('Hello') && flow.streaming === 0, `streaming=${flow.streaming}`),
         ...capture.checks,
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   },

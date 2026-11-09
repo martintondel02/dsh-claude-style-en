@@ -4,7 +4,7 @@ export default {
   id: 'brand',
   order: 15,
   contracts: [],
-  ungated: '只画读者自己提供的品牌名、标志图与强调色；什么都没提供时页面与所选品牌一致',
+  ungated: 'Draws only the brand name, mark and accent the reader supplies; with nothing supplied the page matches the selected brand',
   stylesheets: [{ file: 'brand.css', rank: 115 }],
   cases: ['custom-brand']
 } satisfies FeatureManifest

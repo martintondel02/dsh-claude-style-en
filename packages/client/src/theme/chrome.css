@@ -169,7 +169,7 @@ body[data-dsh-claude-style] :is(dialog, [role="dialog"]):not(.dsvs-boot, [data-d
 }
 
 /* ---------- clay accent: one emphasis color, disciplined ---------- */
-/* A host button anchor (`_linkButton`, e.g. the settings page's 充值) states its
+/* A host button anchor (`_linkButton`, e.g. the settings page's top-up link) states its
    own ink; repainting it here would paint the label the same colour as its fill. */
 body[data-dsh-claude-style] a:not([data-dsh-claude-part~="link-button"]) {
   color: var(--dsw-alias-link);

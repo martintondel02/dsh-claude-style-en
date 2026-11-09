@@ -69,8 +69,9 @@ test('a click starts waves that travel outward, slowing with distance', () => {
 })
 
 test('a click on the far side of the page does not slow a ring already in flight', () => {
-  // 种子固定的那一份：不传种子的场次把噪声交给 Math.random，量出来的行程会在这条
-  // 判定线两侧来回，同一次提交在不同机器上给出相反的结论。
+  // The seeded field: a run with no seed hands its noise to Math.random, so the
+  // measured travel swings back and forth over this threshold, and one commit
+  // gives opposite verdicts on different machines.
   const alone = createWaves()
   const followed = createWaves()
   for (const waves of [alone, followed]) {

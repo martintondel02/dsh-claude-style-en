@@ -16,32 +16,36 @@ import { answerPromptOf, answerRowOf, readerMessageOf, rewindTo } from './messag
 const copy = createCopy(COPY)
 
 /**
- * 一条读者发出的消息：它下面那行控件补上「撤回」和「编辑」，与 Claude Code
- * 一致，这行控件只在指针落到消息上时显现。
+ * A message the reader sent: the control row below it gains "Retract" and "Edit", as in Claude Code,
+ * and that row shows only while the pointer rests on the message.
  *
- * 这行控件是宿主自己画的（时钟与复制按钮），皮肤不另画一份：宿主在
- * `[data-clock]` 上标出控件行，在 `data-chat-flow-kind="user"` 上标出读者
- * 消息，样式表按这两个标记让每一行读者消息都只在悬停或聚焦时显现（宿主自己
- * 只对后面还跟着消息的那种行这样做）。撤回与编辑这两个按钮插进同一行，因此
- * 跟着一起显现，复制与时间也是同一个行为。
+ * The control row is the host's own (the clock and the copy button), and the skin draws no second one:
+ * the host marks the control row with `[data-clock]` and the reader message with
+ * `data-chat-flow-kind="user"`, and the stylesheet uses those two marks to show every reader message
+ * row only on hover or focus (the host does that only for rows that still have messages after them).
+ * The two buttons are inserted into the same row, so they show with it, and the copy button and the
+ * time behave the same way.
  *
- * 两个按钮画成宿主自己的按钮：标签走宿主的 Tooltip，与复制按钮是同一个组件，
- * 悬停时出来的提示因此同形同色（message-action-buttons.ts）。
+ * The two buttons are drawn as the host's own buttons: the labels go through the host's Tooltip, the
+ * same component the copy button uses, so the tips shown on hover share shape and colour
+ * (message-action-buttons.ts).
  *
- * 两个动作都走分岔（message-cut.ts）：宿主没有原地截断会话的接口，所以消息
- * 前一个事件处复制成新会话。撤回把原文放回新会话的输入框，等读者自己再发；
- * 编辑把改过的文字直接在里面发出去。原会话一个事件都不动，读者想回去看随时
- * 能回去。正式回答行的「重跑」与「删除此轮」也从那一轮的用户提问前分岔：
- * 重跑在新会话里提交原提问，删除只留下该轮之前的会话前缀。
+ * Both actions fork (message-cut.ts): the host has no way to truncate a conversation in place, so the
+ * prefix up to the event before the message is copied into a new session. Retract puts the original
+ * text back into the new session's composer and waits for the reader to send it; edit sends the changed
+ * text straight from there. The original session loses no event, and the reader can go back and look
+ * whenever. The answer row's "Rerun" and "Delete this turn" also fork in front of that turn's user
+ * prompt: rerun submits the original prompt in the new session, and delete leaves only the session
+ * prefix before that turn.
  */
 
-/** 读者消息的那一行（宿主标出的 kind）。 */
+/** The reader message's row (the kind the host marks). */
 const USER_ROW_SELECTOR = `[${FLOW_KIND_ATTRIBUTE}="${USER_ROW_KIND}"]`
-/** 控件行：宿主画在这一行里的时钟与复制按钮。 */
+/** The control row: the clock and copy button the host draws in this row. */
 const ACTION_SEAT_SELECTOR = `${USER_ROW_SELECTOR} [${MESSAGE_ACTION_ROW_ATTRIBUTE}]`
 const ANSWER_SEAT_SELECTOR = `${TURN_TAIL_SELECTOR} [${MESSAGE_ACTION_ROW_ATTRIBUTE}]`
 const MESSAGE_SEATS_SELECTOR = `${ACTION_SEAT_SELECTOR}, ${ANSWER_SEAT_SELECTOR}`
-/** 打开编辑框的那一行：样式表靠它藏起原来的气泡。 */
+/** The row whose editor is open: the stylesheet uses it to hide the original bubble. */
 const EDITING_ATTRIBUTE = 'data-dsh-claude-message-editing'
 const EDITOR_CLASS = 'dsh-claude-message-editor'
 const EDITOR_INPUT_CLASS = 'dsh-claude-message-editor-input'
@@ -49,13 +53,13 @@ const EDITOR_ROW_CLASS = 'dsh-claude-message-editor-row'
 const EDITOR_CANCEL_CLASS = 'dsh-claude-message-editor-cancel'
 const EDITOR_SAVE_CLASS = 'dsh-claude-message-editor-save'
 
-/** 一个控件行上我们插进去的按钮座：它的盒子与 React 根。 */
+/** The button seat this feature inserts on a control row: its box and its React root. */
 interface Seat {
   box: HTMLElement
   root: reactDom.Root
 }
 
-/** 正在编辑的那一行：它的根、它的输入框，以及它写回哪一行。 */
+/** The row being edited: its root, its input, and the row it writes back to. */
 interface Editing {
   row: HTMLElement
   root: HTMLElement
@@ -72,7 +76,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   let released = false
   let pendingAction = false
 
-  /** 一次写入等下一帧：宿主一批挂进来的是一整棵子树，逐条写会把那批拆碎。 */
+  /** One write waits for the next frame: the host mounts a whole subtree in one batch, and writing one by one would break that batch apart. */
   function queue(write: () => void) {
     if (released || cancelFrame !== null) return
     cancelFrame = requestFrame({
@@ -100,10 +104,11 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 一次动作的收尾：失败用宿主的提示告诉读者，就地停下。
+   * The end of one action: a failure tells the reader through the host's toast and stops in place.
    *
-   * 这里没有别的上报通道 —— 分岔失败时页面什么也不会变，读者需要一个说法；
-   * 提示只带走一句通用的话，具体原因留在控制台。
+   * There is no other reporting channel here — when a fork fails the page changes nothing, and the
+   * reader needs an explanation; the toast carries one generic line, and the concrete reason stays in
+   * the console.
    */
   function run(action: () => unknown) {
     if (pendingAction) return
@@ -122,7 +127,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     }
   }
 
-  /** 打开编辑框：同一时刻只开一个，另一行开着就先收回去。 */
+  /** Open the editor: only one at a time; an editor open on another row is collected first. */
   function openEditor(row: HTMLElement, line: HTMLElement) {
     const message = readerMessageOf(ctx, row)
     if (message === null) throw new Error('message-actions: the row no longer resolves to a message')
@@ -144,7 +149,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     cancel.type = 'button'
     const save = buildElement('button', EDITOR_SAVE_CLASS, copy('save'))
     save.type = 'button'
-    // 编辑的意思是把这条消息再发一次：文字清空了就没有可发的，读者得先写点什么。
+    // Editing means sending this message again: with the text cleared there is nothing to send, and the reader must write something first.
     save.disabled = input.value.trim() === ''
     buttons.append(cancel, save)
     root.append(input, buttons)
@@ -177,12 +182,12 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     input.setSelectionRange(input.value.length, input.value.length)
   }
 
-  /** 保存编辑：分岔到这条消息之前，把改过的文字在新会话里直接发出。 */
+  /** Save the edit: fork in front of this message and send the changed text straight into the new session. */
   async function commitEditor() {
     const current = editing
     if (current === null) return
     const text = current.input.value
-    // 空文字不发：编辑框留着，读者补上内容再按一次。
+    // Empty text is not sent: the editor stays, and the reader fills it in and presses again.
     if (text.trim() === '') return
     const message = readerMessageOf(ctx, current.row)
     closeEditor()
@@ -191,7 +196,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     toast.show({ text: copy('sent') })
   }
 
-  /** 撤回：分岔到这条消息之前，把原文放回新会话的输入框，等读者自己再发。 */
+  /** Retract: fork in front of this message, put the original text back into the new session's composer, and wait for the reader to send it. */
   async function retractMessage(row: HTMLElement) {
     const message = readerMessageOf(ctx, row)
     if (message === null) throw new Error('message-actions: the row no longer resolves to a message')
@@ -230,7 +235,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     toast.show({ text: copy('deleted') })
   }
 
-  /** 两个按钮的动作：宿主重画一行时按钮跟着重画，动作本身读的是当时那一行。 */
+  /** The two buttons' actions: the host redraws a row and the buttons are redrawn with it, and the action itself reads the row as it stood then. */
   function handlersFor(row: HTMLElement, line: HTMLElement) {
     if (row.matches(CHAT_ANSWER_ROW_SELECTOR)) {
       const attachments = answerPromptOf(ctx, row)?.attachments === true
@@ -257,7 +262,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
     }))
   }
 
-  /** 给一个控件行补上两个按钮；已经有就不再写第二遍。 */
+  /** Add the two buttons to a control row; where they already stand, write no second copy. */
   function decorate(line: HTMLElement) {
     if (line.querySelector(`[${BUTTONS_SEAT_ATTRIBUTE}]`) !== null) return
     const answer = answerRowOf(line)
@@ -267,20 +272,20 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
       const message = answerPromptOf(ctx, answer)
       if (message === null || message.open) return
     } else {
-      // 附件是浏览器为一次发送上传的草稿，撤回或编辑会丢掉它们。
+      // Attachments are drafts the browser uploaded for one send; retract or edit would drop them.
       const message = readerMessageOf(ctx, row)
       if (message !== null && (message.text === '' || message.attachments)) return
     }
     const box = buildElement('span', BUTTONS_SEAT_CLASS)
     box.setAttribute(BUTTONS_SEAT_ATTRIBUTE, '')
-    // 宿主在这一行里先画时间与复制，两个按钮跟在后面，与 Claude Code 的顺序一致。
+    // The host draws the time and the copy button first in this row, and the two buttons follow, in Claude Code's order.
     line.append(box)
     const seat: Seat = { box, root: reactDom.createRoot(box) }
     seats.set(line, seat)
     draw(seat, row, line)
   }
 
-  /** 语言切换：按钮的提示与编辑框的文字跟着换。 */
+  /** A language switch: the buttons' tips and the editor's text follow. */
   function relabel() {
     for (const line of seats.keys()) {
       const seat = seats.get(line)
@@ -300,7 +305,7 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   function sync() {
     for (const line of seats.keys()) if (!line.isConnected) dropSeat(line)
     if (editing !== null && !editing.root.isConnected) {
-      // 宿主重画了这一行，把编辑框一起换掉了：状态收回来，不留半开的行。
+      // The host redrew this row and replaced the editor with it: the state is collected, leaving no half-open row.
       editing.row.removeAttribute(EDITING_ATTRIBUTE)
       editing = null
     }
@@ -310,8 +315,9 @@ export function install(ctx: HostContext, ui: FeatureUi<typeof manifest>) {
   }
 
   /**
-   * 宿主重画一行时可能只换掉我们的按钮而留下控件行，那种批次不会给匹配表带来
-   * 新节点，所以另外看一层：收走的批次里出现我们的按钮，就再对齐一次。
+   * When the host redraws a row it may replace only our buttons and leave the control row, and that
+   * batch brings no new nodes to the match list, so this watches one more layer: a batch whose removals
+   * contain our button is aligned once more.
    */
   const stopRemovals = subscribeMutations(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: [ROW_PHASE_ATTRIBUTE] }, (records) => {
     for (const record of records) {

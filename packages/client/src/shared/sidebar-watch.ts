@@ -1,29 +1,32 @@
 import { SESSION_ROW_SELECTOR } from '@dsh-claude-style/contracts/dom'
 import { subscribeMutations } from '@dsh-claude-style/engine/bus'
 
-/** 侧栏那一块（宿主的 slot 名字）：只有它里面的变化才值得重排一遍。 */
+/** The sidebar block (the host's slot name): only changes inside it are worth another pass. */
 const SIDEBAR_SELECTOR = '[data-slot="sidebar"]'
 
 /**
- * 只在侧栏里变了才叫醒一遍。
+ * Wakes a pass only when something changed in the sidebar.
  *
- * 宿主的会话行、顶行、列表容器都在侧栏这一块里重建；聊天流、首页卡片的大块重画
- * 与侧栏无关，跟着排一遍只会让页面安定不下来（读者不动时 scheduler 不该还在跑）。
- * 我们自己插的节点都带静音标记，`skipQuiet` 把那些记录滤掉，写入不会自激。
+ * The host's session rows, top row and list container are rebuilt inside this
+ * sidebar block; a large repaint of the chat stream or the home cards has nothing
+ * to do with the sidebar, and passing over it only keeps the page from settling
+ * (the scheduler should not keep running while the reader sits still). The nodes
+ * the skin inserts carry quiet marks, and `skipQuiet` drops those records, so a
+ * write never feeds itself.
  *
- * @param schedule - 侧栏真的变了时叫醒的那一遍。
- * @returns 退订函数。
+ * @param schedule - the pass to wake when the sidebar really changed.
+ * @returns the unsubscribe function.
  */
 export function watchSidebar(schedule: () => void): () => void {
   return subscribeMutations(document.body, { childList: true, subtree: true, skipQuiet: true }, records => {
     for (const record of records) {
       const target = record.target instanceof Element ? record.target : record.target.parentElement
-      // 变化就发生在侧栏里（行被换掉、列表被重画、段落被宿主挤掉）。
+      // The change happened inside the sidebar (a row swapped, the list repainted, a section pushed out by the host).
       if (target !== null && target.closest(SIDEBAR_SELECTOR) !== null) {
         schedule()
         return
       }
-      // 整块侧栏被换掉：新节点自己带着会话行。
+      // The whole sidebar was replaced: the new node brings its session rows with it.
       for (const node of record.addedNodes) {
         if (node instanceof Element && (node.matches(SESSION_ROW_SELECTOR) || node.querySelector(SESSION_ROW_SELECTOR) !== null)) {
           schedule()

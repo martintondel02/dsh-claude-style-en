@@ -3,7 +3,7 @@ import type { FeatureManifest } from '../../core/feature'
 export default {
   id: 'manualUnread',
   order: 154,
-  ungated: '未读标记是会话菜单里的一项操作，标记跟着配置保存，页面上不另设开关',
+  ungated: 'The unread mark is an action in the session menu: the mark is saved with the configuration, and the page adds no switch of its own',
   contracts: ['shell.sidebar-slot', 'session.row-key'],
   stylesheets: [{ file: 'manual-unread.css', rank: 116 }],
   cases: [],

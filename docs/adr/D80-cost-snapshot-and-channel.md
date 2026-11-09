@@ -1,30 +1,30 @@
-# D80. 价格与时段快照走仓库，会话费用由宿主半计价
+# D80. Price and time-of-day snapshots travel through the repository; the host half prices a session
 
-## 背景
+## Background
 
-对话统计行要显示这场会话花了多少。同类插件要么读另一个插件的账本，要么在每台机器上抓官方定价页；前者假定那个插件存在，后者把页面解析的脆弱性放到每个安装上，并让每次调价都要求一次插件更新。官方价格还有两个不能互相推导的币种表、峰谷两档与按日生效的调价，会话还可能中途换模型。
+The conversation stats row has to show what this session cost. Plugins of the same kind either read another plugin's ledger or scrape the official pricing page on every machine; the former assumes that plugin exists, the latter puts the fragility of page parsing on every installation and makes every price change require a plugin update. Official prices also come in two currency tables that cannot be derived from each other, peak and off-peak tiers, and daily price changes, and a session may switch models midway.
 
-## 决定
+## Decision
 
-- 价格是一份快照：`packages/host/data/prices.json`，由 `.github/workflows/data.yml` 每天从官方中英文定价页抓取、校验、只在数值变化时提交。人民币与美元两张表都留在快照里，覆盖峰谷两档；峰窗口与中国法定节假日取自同一工作流刷新的峰值费率目录。
-- 安装端只下载校验过的快照：宿主半先读包内副本，再读磁盘缓存，每天从仓库的 CDN 地址取一次（原始地址兜底），失败就保留手上的表。峰值费率目录改走同一条通道，上游每天只被工作流请求一次。
-- 浏览器半经同源路由读快照，经另一条同源路由按会话 id 取已结算金额；两条路由都走插件既有的请求栅栏。
-- 会话金额由宿主半算：折叠会话日志里的每次 `assistant/message` / `assistant/attempt`，按事件自己的时刻判峰谷、按事件自己的路由取价，`(turn, step)` 的重复上报替换前一份；缓存写按命中价，推理 token 已在输出里。金额以百万分之一货币单位累加，只在格式化时除。
-- 流式过程中加的是估算：现有字符估算乘当前路由的输出单价，与下行 token 同一条曲线；结算到达时换成精确值。
-- 币种是偏好：两张表都在快照里，设置只选用哪一张，汇率不参与官方表的计价。
-- 官方表只覆盖 DeepSeek 的两个在售模型；其余模型的刊例价来自公共目录（models.dev 的美元价表），快照把同一模型在各厂商的报价按字段取中位数，合成一条「输入 缓存读 输出」，计划渠道的零价条目不收。厂商另行公布人民币价目的型号（K3）在快照里另存一份人民币行，人民币直接用它；只有美元行的按快照里的固定汇率折算。
+- Price is a snapshot: `packages/host/data/prices.json`, fetched daily by `.github/workflows/data.yml` from the official Chinese and English pricing pages, validated, and committed only when a value changes. Both the CNY and USD tables stay in the snapshot, covering the peak and off-peak tiers; the peak windows and Chinese statutory holidays come from the peak-rate catalog the same workflow refreshes.
+- The installing end downloads only the validated snapshot: the host half reads the copy inside the package first, then the on-disk cache, and fetches once a day from the repository's CDN address (with the raw address as fallback), keeping the table it has when the fetch fails. The peak-rate catalog moves onto the same channel, so upstream is requested once a day, by the workflow only.
+- The browser half reads the snapshot through a same-origin route, and the settled amount for a session id through another same-origin route; both go through the plugin's existing request fence.
+- The host half computes the session amount: it folds every `assistant/message` / `assistant/attempt` in the conversation log, judging peak or off-peak by the event's own instant and taking its price by the event's own route, with a repeated report for the same `(turn, step)` replacing the earlier one; cache writes are priced at the hit rate, and reasoning tokens are already inside the output. The amount accumulates in millionths of a currency unit and is divided only when formatted.
+- What the streaming phase adds is an estimate: the existing character estimate multiplied by the current route's output rate, on the same curve as the incoming tokens; the settled value replaces it when it arrives.
+- Currency is a preference: both tables are in the snapshot, the setting only chooses which one, and no exchange rate takes part in pricing from the official tables.
+- The official table covers only DeepSeek's two models on sale; the list prices of other models come from a public catalog (models.dev's USD price table), and the snapshot takes the median across vendors' quotes for the same model by field to compose one "input, cache read, output" line, excluding zero-price entries for planned channels. A model whose vendor also publishes a CNY price (K3) has a separate CNY row in the snapshot, used directly for CNY; a USD-only row is converted at the snapshot's fixed rate.
 
-## 后果
+## Consequences
 
-- 仓库成为数据源：官方页改版只让一次工作流运行失败，用户手上的表保持上一版；坏快照在构建时被同一个校验器拦住。
-- 价格表更新会让之后的会话按新表重算，历史不被冻结——这个插件不保留账本；需要与官方账单逐分对账时，以账单为准。
-- 流式中的数字是估算，且只含输出侧：提示与缓存要等结算，所以每次结算时金额会跳一下。
-- 目录覆盖以模型标识为准：不同厂商对同一标识的报价不作区分，订阅渠道的金额是 API 刊例价的等价，不是扣款；固定汇率与银行账单存在差额。官方表没有、目录也没有的模型仍不显示金额。
-- 放弃的方案：读其他插件的账本（假定它存在）；在浏览器里解析官方页（每台机器都承担页面改版的代价）；只存人民币表再乘汇率（两张官方表不是汇率关系，跨币种会差几个百分点）；把金额写进会话日志（用户数据不该被皮肤改写）。
-- 峰值费率目录的来源从上游直连改为仓库镜像：上游负载从每装机每天一次降到每天一次，代价是仓库多一个提交与一条工作流。
+- The repository becomes the data source: a redesign of the official page fails one workflow run, and the table in users' hands keeps the previous version; a bad snapshot is stopped at build time by the same validator.
+- A price-table update makes later sessions recompute under the new table, and history is not frozen — this plugin keeps no ledger; when reconciling penny by penny against the official bill, the bill is authoritative.
+- Numbers during streaming are estimates and cover only the output side: prompt and cache wait for settlement, so the amount jumps once at each settlement.
+- Catalog coverage goes by model id: quotes from different vendors under the same id are not distinguished, the amount for a subscription channel is the API list-price equivalent rather than the charge, and the fixed rate differs from the bank statement. A model neither the official table nor the catalog carries still shows no amount.
+- Abandoned: reading another plugin's ledger (assuming it exists); parsing the official page in the browser (every machine pays for a page redesign); storing only the CNY table and multiplying by an exchange rate (the two official tables are not in an exchange-rate relation, and cross-currency differences reach several percent); writing the amount into the conversation log (the skin should not rewrite user data).
+- The peak-rate catalog's source changes from a direct upstream connection to a repository mirror: upstream load falls from once per installation per day to once a day, at the cost of one more commit and one more workflow in the repository.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供按会话的费用投影或官方价格接口时，宿主半的折叠改为接入宿主的。
-- 官方提供机器可读的价格文档时，工作流的页面解析改为直接读取。
-- 出现第三种需要同一份快照的用途时，快照的校验与路由抽成共享层。
+- When the host provides a per-session cost projection or an official price interface, the host half's folding connects to the host's.
+- When the official side provides a machine-readable price document, the workflow's page parsing reads it directly.
+- When a third use needs the same snapshot, the snapshot's validation and routes are extracted into a shared layer.

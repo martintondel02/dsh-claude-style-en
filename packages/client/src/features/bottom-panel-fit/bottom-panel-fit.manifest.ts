@@ -4,7 +4,7 @@ export default {
   id: 'bottomPanelFit',
   order: 261,
   contracts: ['composer.seat', 'shell.rightbar-column'],
-  ungated: '把 dsh-better-sidebar 的底部面板按左右栏与输入区座位的实测边距换算回页面自己的像素；拖拽侧栏时暂停写入，页面在 1 倍时不写任何东西',
+  ungated: 'Converts dsh-better-sidebar\'s bottom panel back into the page\'s own pixels from the measured margins of the left and right bars and the composer seat; writes pause while a sidebar is dragged, and at a page scale of 1 it writes nothing',
   stylesheets: [],
   cases: [],
 } satisfies FeatureManifest

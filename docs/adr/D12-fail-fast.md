@@ -1,22 +1,22 @@
-# D12. 快速失败与功能隔离
+# D12. Fail fast and isolate features
 
-## 背景
+## Background
 
-皮肤与宿主共享一个页面，也与其他插件共享一个宿主进程。一处失败不能让整页停下来，但被吞掉的错误会在别处以更难排查的方式出现：界面少了一块，控制台什么也没有。
+The skin shares one page with the host, and one host process with other plugins. One failure must not stop the whole page, but a swallowed error shows up elsewhere in a way that is harder to diagnose: a piece of the interface is missing and the console says nothing.
 
-## 决定
+## Decision
 
-- 出错的地方直接抛出，不吞错误、不静默回退。宿主服务可能缺席时，用可选链与类型判断表达「没有这个服务」，不用捕获错误。
-- 需要隔离的地方报告后继续：逐个通知订阅者、逐个运行帧任务、逐个卸载功能，其中一个失败只报告它自己。报告只有一个出口。
-- 允许捕获错误的每一处，都把理由写在代码旁边。理由读不出来的，写进那一处的注释。
-- 功能的拆除是它建立的一切的唯一清理点：监听、订阅、排队的帧任务与定时器、接管的宿主界面。拆除最先注册，且可以重复运行。
-- 功能连续失败若干轮后报告并退役，退役就是运行它自己的拆除。
+- Throw where the error is; do not swallow it and do not fall back silently. Where a host service may be absent, express "there is no such service" with optional chaining and type checks, not by catching an error.
+- Where isolation is needed, report and carry on: notify subscribers one by one, run frame tasks one by one, uninstall features one by one, and a single failure reports only itself. Reporting has one outlet.
+- Every place a catch is allowed writes its reason beside the code. Where the reason cannot be read off, it goes into a comment there.
+- A feature's teardown is the only cleanup point for everything it set up: listeners, subscriptions, queued frame tasks and timers, host interface it took over. Teardown is registered first and may run more than once.
+- A feature that fails several rounds in a row is reported and retired; retirement runs its own teardown.
 
-## 后果
+## Consequences
 
-- 功能失效时界面上没有提示，只有控制台记录；依赖同一宿主服务的功能会一起退役。
-- 每处捕获错误都要写理由，代码因此更长；换来的是「为什么这里可以吞」不需要读者去别处查。
+- When a feature fails there is no hint in the interface, only a console record; features that depend on the same host service retire together.
+- Every catch needs its reason, so the code is longer; in exchange, "why may this be swallowed" does not send the reader somewhere else.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供插件级的错误上报时，把报告接过去。
+- The host provides plugin-level error reporting: hand the reporting over.

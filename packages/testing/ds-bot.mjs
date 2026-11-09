@@ -223,30 +223,30 @@ function dsBotScenario({ check }) {
       const onCode = (state) => JSON.stringify(state.checked) === '[false,true]'
       const band = desktop.box ?? {}
       return [
-        check('以代码一侧启动时本主题拥有页面、切换选中「代码」', themed(boot) && boot.switchShown && onCode(boot), JSON.stringify(boot)),
-        check('宿主控件反复暂离后，切换保留原按钮和提示锚点', notes.reattach.every(entry => entry.same), JSON.stringify(notes.reattach)),
-        check('切到聊天后 ds-bot 画出它的界面、记下的模式是 bot', chat.bot && chat.saved === 'bot' && chat.mode === 'chat', JSON.stringify(chat)),
-        check('聊天一侧本主题的样式表、body 标记与界面元素全部离开', !chat.theme && !chat.themeSheet && chat.themeMarks.length === 0 && chat.themeNodes === 0, JSON.stringify(chat)),
-        check('聊天一侧切换与它自己的样式表留在页面上并选中「聊天」', chat.surfaceSheet && chat.switchShown && onChat(chat), JSON.stringify(chat)),
-        check('在聊天一侧刷新，本主题一帧也没有画出', reload.log.length > 0 && reload.log.every((entry) => !entry.theme) && !reload.theme && reload.bot, JSON.stringify(reload.log.slice(0, 12))),
-        check('刷新后的切换照样在、照样选中「聊天」', reload.switchShown && onChat(reload), JSON.stringify(reload)),
-        check('切回代码后本主题拿回页面、ds-bot 记下 agent', themed(code) && code.saved === 'agent' && onCode(code), JSON.stringify(code)),
-        check('切回代码时 ds-bot 的账户菜单没有留在页面上、隐藏标记已撤下', !code.menu && !code.switching, JSON.stringify(code)),
-        check('用 ds-bot 自己的按钮回到 Bot 界面，本主题同样让开', !ownChat.theme && ownChat.bot && onChat(ownChat), JSON.stringify(ownChat)),
-        check('用 ds-bot 自己的菜单项切到 Agent 模式，本主题同样回来', themed(ownCode) && onCode(ownCode), JSON.stringify(ownCode)),
-        check('桌面端切换离开侧栏行、进入窗口顶端那一行并贴在侧栏列的右沿以内 12px',
+        check('booting on the Code side gives the theme the page, with the switch on Code', themed(boot) && boot.switchShown && onCode(boot), JSON.stringify(boot)),
+        check('the switch keeps its own buttons and tooltip anchors through repeated host control detachments', notes.reattach.every(entry => entry.same), JSON.stringify(notes.reattach)),
+        check('switching to Chat lets ds-bot paint its surface, with its saved mode bot', chat.bot && chat.saved === 'bot' && chat.mode === 'chat', JSON.stringify(chat)),
+        check('on the Chat side the theme stylesheet, body marks and surface nodes all leave', !chat.theme && !chat.themeSheet && chat.themeMarks.length === 0 && chat.themeNodes === 0, JSON.stringify(chat)),
+        check('on the Chat side the switch and its own stylesheet stay, with Chat picked', chat.surfaceSheet && chat.switchShown && onChat(chat), JSON.stringify(chat)),
+        check('a reload on the Chat side paints no theme frame', reload.log.length > 0 && reload.log.every((entry) => !entry.theme) && !reload.theme && reload.bot, JSON.stringify(reload.log.slice(0, 12))),
+        check('after the reload the switch still stands with Chat picked', reload.switchShown && onChat(reload), JSON.stringify(reload)),
+        check('switching back to Code returns the page to the theme, with ds-bot saving agent', themed(code) && code.saved === 'agent' && onCode(code), JSON.stringify(code)),
+        check('switching back to Code leaves no ds-bot account menu on the page and lifts the hidden mark', !code.menu && !code.switching, JSON.stringify(code)),
+        check('ds-bot\'s own button returns to the Bot surface and the theme stands down too', !ownChat.theme && ownChat.bot && onChat(ownChat), JSON.stringify(ownChat)),
+        check('ds-bot\'s own menu item switches to Agent mode and the theme comes back too', themed(ownCode) && onCode(ownCode), JSON.stringify(ownCode)),
+        check('on the desktop the switch leaves the sidebar row, enters the window caption row and sits 12px inside the sidebar column right edge',
           themed(desktop) && band.place === 'band' && band.inBody && band.fixed &&
             band.right === band.columnRight - 12 && band.y >= 0 && band.y + band.height <= 40,
           JSON.stringify(band)),
-        check('桌面端在聊天一侧，切换留在 ds-bot 自己的顶行、没有被标题栏的测量丢掉',
+        check('on the desktop Chat side the switch stays in ds-bot\'s own top row, not lost by the titlebar measurement',
           notes.desktopChat.bot && !notes.desktopChat.theme && notes.desktopChat.switchShown &&
             notes.desktopChat.box?.place === 'row' && notes.desktopChat.box?.parent === 'bt-side-top' &&
             notes.desktopChat.box?.fixed === false,
           JSON.stringify(notes.desktopChat.box)),
-        check('侧栏收窄到放不下时切换离开屏幕，但仍在测量之中',
+        check('when the sidebar narrows past the room the switch leaves the screen but stays measured',
           rail.box !== null && rail.box.place === 'tucked' && rail.box.inBody && !rail.switchShown,
           JSON.stringify(rail.box)),
-        check('控制台没有异常', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
+        check('the console reports no errors', session.problems.length === 0, session.problems.slice(0, 3).join(' | ')),
       ]
     },
   }

@@ -1,30 +1,30 @@
-# D89. 提示音由宿主半播放系统声音，浏览器半只判断何时响
+# D89. The host half plays system sounds for the cues; the browser half only decides when they sound
 
-## 背景
+## Background
 
-两个时刻需要一声轻提示：会话开始等读者确认，任务结束。浏览器里的声音有两个限制：没有读者的手势时音频上下文可能挂起，窗口在后台时浏览器的播放不可靠；而这一声提示最有用的时刻，恰是窗口不在前台的时候。macOS 自带 Pop 与 Tink 两个系统提示音，文件在系统目录里，随包分发则触及 Apple 的版权。宿主半边本来就能运行在本机上，它可以直接播放系统里的文件。
+Two moments need a soft cue: a session waiting for the reader's confirmation, and a task finishing. Sound in the browser has two limits: without a reader gesture the audio context may be suspended, and playback is unreliable while the window is in the background; yet the moment this cue is most useful is exactly when the window is not in front. macOS ships two system sounds, Pop and Tink, as files in system directories, and distributing them in the package would touch Apple's copyright. The host half already runs on this machine, so it can play the files from the system directly.
 
-## 决定
+## Decision
 
-- 新增私有路由 `/dsh-claude-style/sound`，与其余路由走同一道请求栅栏（D75）。`GET` 回答本机能不能由宿主播放、能播哪两个；`POST { name, volume }` 播放一次。
-- 宿主只在 macOS、`/usr/bin/afplay` 与两个系统文件都在时回答 `system`；播放用 `afplay -v <gain>`，名字取自固定的两个文件，增益钳在 `afplay` 接受的范围里。包内不带任何音频。
-- 浏览器半读宿主自己的两份快照：`uiSession.sessionStatus` 与 `sessions.list`。会话从「不等」变成「等」播 Pop；顶层会话从「在跑」变成「不在跑」播 Tink；子代理只在等待时出声，它的结束不算任务完成。
-- 页面打开时的第一次读数就是基线：已经在等或已经在跑的状态不补一声。两次提示落在 200 毫秒内时合成一次，等待确认优先。
-- 只有回环地址上的页面走宿主播放；其余页面（另一台机器上的 `dsh web`、非 macOS 宿主、没有这条路由的宿主）改由 Web Audio 合成两个近似的声音，音高与包络跟着系统文件，增益取同一张表。
-- 一个偏好「提示音效」，取值关闭、轻柔、清晰：关闭即不装这个功能，页面不订阅状态也不开音频上下文；两档音量同时决定两个提示的增益。默认关闭。提示音成对固定为 Pop 与 Tink，这一版不提供音色选择。
+- Add a private route `/dsh-claude-style/sound`, going through the same request fence as the other routes (D75). `GET` answers whether this machine can be played by the host, and which two sounds it can play; `POST { name, volume }` plays one.
+- The host answers `system` only on macOS, with `/usr/bin/afplay` and both system files present; playback uses `afplay -v <gain>`, the names taken from the two fixed files, and the gain clamped to what `afplay` accepts. The package carries no audio.
+- The browser half reads two of the host's own snapshots: `uiSession.sessionStatus` and `sessions.list`. A session going from "not waiting" to "waiting" plays Pop; a top-level session going from "running" to "not running" plays Tink; a subagent sounds only when it waits, and its end does not count as a finished task.
+- The first reading when the page opens is the baseline: a state already waiting or already running gets no cue. Two cues within 200 milliseconds are merged into one, with waiting for confirmation taking priority.
+- Only a page on the loopback address uses host playback; other pages (a `dsh web` on another machine, a non-macOS host, a host without this route) fall back to Web Audio synthesizing two approximate sounds, with pitch and envelope following the system files and gain from the same table.
+- One preference, "Sound cue", with values off, soft and clear: off installs no part of the feature, and the page subscribes to no state and opens no audio context; the two levels set the gain of both cues together. Off by default. The cue pair is fixed as Pop and Tink, and this version offers no choice of timbre.
 
-## 后果
+## Consequences
 
-- macOS 上听到的是系统自己的文件，窗口切到别的应用之后仍然会响；非 macOS 与远程页面听到的是合成声，音色接近但不等于系统文件。
-- 停止与失败的轮次同样是「不再运行」，也会响 Tink。要把它们和正常完成分开，需要改为读该会话的事件流并按 `turn/end` 的原因过滤，代价是再跟一个订阅。
-- 每个提示启动一次 `afplay` 进程。提示本来就稀疏，这个代价可以接受；播放失败只降级到合成声，并报告一次，不会打断状态订阅（D12）。
-- 同一工作区开两个窗口时，两个页面都会判断到同一处状态变化，各响一次。
-- 默认关闭：没改过设置的人不会被一声自己没要过的提示打断，代价是这项功能要靠设置页被发现。
-- 放弃的方案：只用浏览器合成（后台不可靠，音色不是系统文件）；把系统文件打进包里（Apple 的版权）；用宿主已有的通知能力（宿主没有声音服务）；让宿主读会话状态（状态只在浏览器半）；把开关、两声提示与音量分成几项设置（同一个决定被拆在三处，关掉一处仍会以为整项已关）。
-- 音色固定：加音色选择就要让路由列出系统目录、让设置行读一份动态清单，超出这一版。
+- On macOS what sounds is the system's own file, and it still sounds after the window switches to another application; non-macOS and remote pages hear a synthesized sound, close in timbre but not equal to the system file.
+- Stopped and failed turns also go from "running" to "not running" and also play Tink. Distinguishing them from a normal finish would mean reading that session's event stream and filtering by the `turn/end` reason, at the cost of one more subscription.
+- Each cue starts one `afplay` process. Cues are sparse anyway, so that cost is acceptable; a failed playback only degrades to the synthesized sound and reports once, without interrupting the state subscription (D12).
+- With two windows open on the same workspace, both pages see the same state change and each sounds once.
+- Off by default: someone who never changed the setting is not interrupted by a cue they did not ask for, at the cost that the feature has to be discovered through the settings page.
+- Abandoned: browser synthesis alone (unreliable in the background, and the timbre is not the system file); shipping the system files in the package (Apple's copyright); using the host's existing notification capability (the host has no sound service); having the host read the session state (the state lives only in the browser half); splitting the switch, the two cues and the volume into several settings (one decision split three ways, and turning one off still looks as if the whole feature were off).
+- The timbre is fixed: adding a choice of timbre would mean the route listing a system directory and the settings row reading a dynamic list, beyond this version.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供自己的声音或通知服务时，路由改为调用宿主的服务。
-- 浏览器在页面没有手势、窗口在后台时也能可靠播放，且音色需要与系统文件一致时，宿主播放这一段可以退场。
-- 提示音需要成为可选的音色清单时，路由增加目录读取，设置行的选择改为动态的。
+- When the host provides its own sound or notification service, the route calls the host's service.
+- When the browser can play reliably without a page gesture and while the window is in the background, and the timbre has to match the system files, host playback can retire.
+- When cues need to become a selectable list of timbres, the route gains directory reading and the settings row's choice becomes dynamic.

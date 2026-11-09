@@ -1,35 +1,35 @@
-# D74. 与其他插件共存，让路时整页交出
+# D74. Coexist with other plugins: when yielding, hand over the whole page
 
-- **取代**：D49、D23、D32、D55、D56、D57、D58、D63
+- **Replaces**: D49, D23, D32, D55, D56, D57, D58, D63
 
-## 背景
+## Background
 
-从上游聊天插件搬来的聊天区交互与上游本身装在同一个页面上：两套实现认领同一批标记，会互相回放同一次点击、各点同一个开关、以同一优先级注册同一个键位而抛出。皮肤中心与另一个占用页面的插件也能在同一时刻接管这一页的侧栏、对话与输入区。共存靠逐条避让只会越补越多，得先回答「这一页现在归谁」。
+The chat-area interactions ported from the upstream chat plugin and the upstream itself are installed on the same page: two implementations claim the same markers, replay the same click for each other, toggle the same switch, or register the same keybinding at the same priority and throw. The skin center and another plugin that occupies the page can also take over this page's sidebar, conversation and input area at the same moment. Coexistence by avoiding one item at a time only piles up more patches; the first question is "who owns this page now".
 
-让路时留下哪几件界面由「它的样式从哪来」决定。设置页的排版、控件与令牌都写在主题自己的样式表里，那张表随主题一起撤下，留下的页面只剩宿主默认的排版：分页条变成一行纯文字，行没有间距与开关，改一项也看不出结果。要让它在别的皮肤下照旧好看，得为它单独发运一套样式与令牌，再为它维持一套与主题并列的外观；这份代价换来的是一页在别的皮肤下改不了外观的设置。
+Which pieces of interface to leave behind when yielding is decided by "where its styles come from". The settings page's layout, controls and tokens are all written in the theme's own stylesheet, and that sheet comes down with the theme, so the page left behind has only the host's default layout: the tab bar becomes a line of plain text, rows have no spacing or switches, and changing an option shows no result. To make it look right under another skin as it does now, you would have to ship a separate set of styles and tokens for it, and maintain a set of appearance alongside the theme's; that cost buys a settings page whose appearance cannot be changed under another skin.
 
-## 决定
+## Decision
 
-- 页面属主只在唯一一处判定：另一个皮肤作画、或另一个插件的外壳挂在页面上，即为让路；判定在启动时同步读一次，之后跟随两处标记的真实变化，不跨变化缓存。皮肤优先，两者同时在时页面归皮肤。
-- 让路的粒度是整页：不挂本主题的样式表、不装调度器、不写本主题的标记、不留本主题的任何界面，设置页一并交出。让路只收掉视觉，功能的拆除不牵连读者存下的设置与偏好。
-- 例外只有一个，换回本主题的路径由别的插件提供：皮肤作画时是皮肤中心里本插件的条目，ds-bot 的 Bot 外壳接管页面时是留在页面上的那个 Chat / Code 切换器。切换器自带一张只读宿主令牌的样式表，不依赖主题的令牌与共享控件，因此不必让路。
-- 抢回页面时重新采用偏好、挂样式表、装齐功能；已在安装的功能不重复安装。
-- 搬来的聊天区交互只读宿主自己写下的属性，自己写出的标记一律带皮肤自己的前缀，与上游同时装着时两套实现认领不到对方的标记。
-- 上游在场时这些交互整体让位：设置页把相关行禁用、保留读者的值，下面写明由谁接管；上游中途装卸随即卸下或装回，功能内部不各自判断。
-- 上游留下的设置不改写：读者在宿主自己的档位下看到的行为按宿主的档位来，由文档写明。
-- 这些交互使用皮肤自己的偏好条目与设置页，不动上游插件的配置。
-- 说明模型正在做什么的那一行，说法只由一处给出；同一处出现可见的替代文字时按归属让位，撤下本主题的文案与计时。
+- The page owner is decided in exactly one place: another skin painting, or another plugin's shell mounted on the page, means yield; the decision is read synchronously at startup, then follows the real changes of the two markers and is not cached across changes. The skin wins: when both are present the page belongs to the skin.
+- The grain of yielding is the whole page: no stylesheet of this theme is mounted, no scheduler installed, no marker of this theme written, no interface of this theme left, and the settings page is handed over with it. Yielding withdraws only the visuals; a feature's teardown does not touch the settings and preferences the reader has stored.
+- There is exactly one exception, where another plugin provides the way back to this theme: the skin center's entry for this plugin while a skin paints, and the Chat / Code switch left on the page while ds-bot's Bot shell takes it over. The switch carries its own stylesheet reading only host tokens and depends on neither the theme's tokens nor its shared controls, so it need not yield.
+- Taking the page back adopts the preferences again, mounts the stylesheets and installs every feature; a feature already installed is not installed twice.
+- The ported chat-area interactions read only attributes the host itself writes, and every marker they write carries the skin's own prefix, so with the upstream installed at the same time neither implementation can claim the other's markers.
+- While the upstream is present these interactions stand aside as a whole: the settings page disables the relevant rows, keeps the reader's values and states below them who has taken over; installing or removing the upstream mid-session takes them down or puts them back at once, and features do not each judge for themselves.
+- Settings the upstream leaves behind are not rewritten: the behaviour the reader sees under the host's own tiers follows the host's tiers, and the documentation says so.
+- These interactions use the skin's own preference entries and settings page and do not touch the upstream plugin's configuration.
+- The line that says what the model is doing is written in one place only; when a visible substitute text appears at the same place, it yields by ownership, withdrawing this theme's copy and clock.
 
-## 后果
+## Consequences
 
-- 让路期间整页惰性，页面上的本包行为全部停摆，翻转会带来一次可见的重新挂载。
-- 让路期间读者打不开本主题的设置页，偏好要等本主题拿回页面之后才能改。
-- 界面切换依赖另一个插件未承诺的标记与菜单次序；它公开模式的读写接口之前，只能对着固定版本核对。它的浏览器半边没能运行时，存下的模式会让本主题一直让路。
-- 搬来的行为由本仓库自己的用例覆盖，上游更新要人工对照；宿主改变过程组的编排方式时，本主题的计数与读数要跟着改。
-- 已停止与失败轮次不再显示本主题算出的用时与用量，历史里只剩宿主自己的说明。
+- While yielding, the whole page is inert: every behaviour of this package on the page stops, and the flip causes a visible remount.
+- While yielding, the reader cannot open this theme's settings page, and preferences can only change after this theme takes the page back.
+- The interface switch depends on markers and menu order another plugin has not promised; until it exposes an interface for reading and writing its mode, the check can only be against a fixed version. When its browser half fails to run, the stored mode makes this theme yield forever.
+- The ported behaviour is covered by this repository's own cases, and upstream updates are compared by hand; when the host changes how it arranges process groups, this theme's counts and readings change with it.
+- Stopped and failed turns no longer show the time and usage this theme computed; only the host's own statement remains in the history.
 
-## 重审条件
+## Reconsider when
 
-- 宿主提供主题层接口，或上游把这些交互拆成可依赖的库并公开稳定接口时，改为依赖而不搬运。
-- 另一个插件公开自己模式的读写接口时，界面切换改用它，删掉对它标记与菜单次序的依赖。
-- 宿主为主题插件提供只画自己设置页的扩展点时，设置页重新留在让路的页面上，不必自带一套样式与令牌。
+- When the host provides a theme-layer interface, or the upstream splits these interactions into a library that can be depended on with a stable public interface, depend on it instead of porting.
+- When another plugin exposes an interface for reading and writing its mode, the interface switch uses it, and the dependency on its markers and menu order is deleted.
+- When the host provides an extension point for theme plugins to paint only their own settings page, the settings page stays on the yielding page and need not carry its own styles and tokens.

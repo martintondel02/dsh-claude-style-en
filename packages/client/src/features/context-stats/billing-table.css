@@ -34,7 +34,7 @@ body[data-dsh-claude-style] :is(.dsh-claude-billing-units, .dsh-claude-billing-r
   line-height: 16px;
 }
 
-/* One button face for the row's "编辑" and the card's own buttons. */
+/* One button face for the row's "Edit" and the card's own buttons. */
 body[data-dsh-claude-style] :is(.dsh-claude-billing-row-button, .dsh-claude-billing-button) {
   appearance: none;
   flex: none;

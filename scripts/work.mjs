@@ -343,7 +343,7 @@ export function checkWorkOrders() {
   }
 
   const ids = new Set(valid.map((order) => order.meta.id))
-  const docs = ['README.md', 'README.en.md', 'docs/ARCHITECTURE.md', 'docs/CHANGELOG.md', 'docs/STYLE.md', 'AGENTS.md']
+  const docs = ['README.md', 'README.zh.md', 'docs/ARCHITECTURE.md', 'docs/CHANGELOG.md', 'docs/STYLE.md', 'AGENTS.md']
   for (const dir of ['docs/adr', 'docs/changes']) {
     const full = path.join(STORAGE, dir)
     if (fs.existsSync(full)) {
